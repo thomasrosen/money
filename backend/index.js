@@ -9,6 +9,11 @@ import sharp from 'sharp'
 import express from 'express'
 
 
+// checkif ./cache/ exists
+if (!fs.existsSync('./cache/')) {
+  fs.mkdirSync('./cache/', { recursive: true })
+}
+
 
 async function loadImage(buffer) {
   // I use the idea from the following answer to remove the shadows: https://stackoverflow.com/questions/44047819/increase-image-brightness-without-overflow/44054699#44054699
@@ -71,12 +76,12 @@ async function loadImage(buffer) {
 
 
   // checkif ./images/ exists
-  if (!fs.existsSync('./images/')) {
-    fs.mkdirSync('./images/')
+  if (!fs.existsSync('./cache/images/')) {
+    fs.mkdirSync('./cache/images/', { recursive: true })
   }
 
   // save image to disk for debugging
-  await image_better.toFile(`./images/image.png`)
+  await image_better.toFile(`./cache/images/image.png`)
 
   return {
     data: await image_better.raw().toBuffer(),
@@ -105,7 +110,7 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
-  const save_path = `./${type}-${modelPath}`
+  const save_path = `./cache/${type}-${modelPath}`
 
   if (!existsSync(save_path)) {
     console.info('Downloading text recognition model...')
