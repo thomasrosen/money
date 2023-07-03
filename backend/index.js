@@ -38,6 +38,11 @@ Strictly return as JSON:
 
     const result_json_text = await ask_openai(
       [
+        // {
+        //   role: 'system',
+        //   // content: 'Only answer truthfully. Do not lie. Only cite the text. Strictly return as JSON.',
+        //   content: 'Answer as truthfully as possible.',
+        // },
         {
           role: 'user',
           content: prompt,
