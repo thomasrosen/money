@@ -258,10 +258,11 @@ app.post('/ocr', async (req, res) => {
   } catch (err) {
     res.writeHead(500)
     res.end(JSON.stringify({ error: err.message }))
-  } finally {
-    // Shut down the OCR worker thread.
-    client.destroy()
   }
+  // finally {
+  //   // Shut down the OCR worker thread.
+  //   client.destroy()
+  // }
 })
 
 const port = 13151 // the word money as its letter positions in the abc = 13 15 14 5 25
