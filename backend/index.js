@@ -16,7 +16,7 @@ if (!fs.existsSync('./cache/')) {
 }
 
 async function ocr_result_to_structured_json (ocr_result_text) {
-  // using open gpt
+  console.log('sending to gpt-3')
 
   const prompt = `
 ${ocr_result_text}
@@ -65,14 +65,14 @@ async function loadImage(buffer) {
   // I use the idea from the following answer to remove the shadows: https://stackoverflow.com/questions/44047819/increase-image-brightness-without-overflow/44054699#44054699
 
   const image_bw = await sharp(buffer)
-    .flatten({ background: '#FFF' })
-    .rotate()
-    .recomb([
+    .flatten({ background: '#FFF' }) // replace alpha channel with white background
+    .rotate() // auto rotate based on EXIF data
+    .recomb([ // grayscale
       [0.333, 0.333, 0.333],
       [0.333, 0.333, 0.333],
       [0.333, 0.333, 0.333],
     ])
-    .normalise()
+    .normalise() // full range 0 to 255
 
   let { width, height, orientation } = await image_bw.metadata()
   // console.log('width, height, orientation', width, height, orientation)
@@ -86,7 +86,7 @@ async function loadImage(buffer) {
   }
 
   const image_blurred = await sharp(await image_bw.clone().toBuffer())
-    .median(61) // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines
+    .median(61) // median-blur // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines
     .blur(1) // TODO is this extra blur necessary?
     .normalise()
 
@@ -117,8 +117,8 @@ async function loadImage(buffer) {
     }
   })
     .normalise()
-    // .threshold(180) // 220
-    .ensureAlpha()
+    // .threshold(180) // 220 // only full white or full black
+    .ensureAlpha() // add alpha channel if not already present
 
 
   // checkif ./images/ exists
@@ -216,24 +216,29 @@ async function get_ocr_client(options) {
 }
 
 app.post('/ocr', async (req, res) => {
+  console.log('\n\nPOST /ocr\n')
 
   const client = await get_ocr_client({
     lang: 'deu',
     type: 'fast',
   })
+  console.log('loaded ocr client')
 
   try {
 
     const imageData = await readRequestBody(req)
     const image = await loadImage(imageData)
+    console.log('loaded image')
 
     if (false) {
       throw new Error('test')
     }
 
     await client.loadImage(image)
+    console.log('loaded image into ocr client')
+
     const text = await client.getText()
-    console.log('text\n\n', text)
+    console.log('got text from ocr client')
 
     const invoice_result = await ocr_result_to_structured_json(text)
 
