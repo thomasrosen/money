@@ -35,7 +35,10 @@ Be precise with all the values.
 `
 
   try {
-    const max_tokens = ocr_result_text.length // TODO: find a better way to set this (but this should be enough for now)
+    let max_tokens = ocr_result_text.length // TODO: find a better way to set this (but this should be enough for now)
+    if (max_tokens > 2000) {
+      max_tokens = 2000
+    }
 
     const result_json_text = await ask_openai(
       [
