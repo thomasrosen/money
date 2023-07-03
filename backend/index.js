@@ -22,13 +22,13 @@ async function ocr_result_to_structured_json (ocr_result_text) {
 ${ocr_result_text}
 
 Strictly return as JSON:
-- place_name
-- place_address
+- place_name (as one string)
+- place_address (as one string)
 - datetime (yyyy-MM-dd HH:mm:ss Z)
 - cost_sum (as string with currency and 000.00)
 - amount_of_tip (as string with currency and 000.00)
-- way_of_payment (Visa, Cash, or so on)
-- as an array: items (name, count and price_for_all (as string with currency and 000.00))
+- way_of_payment (Visa, Cash, or so on) (as one string)
+- as an array: items (name, quantity, price_per_quantity and price_total (as string with currency and 000.00))
 
 Currency is in euros (€) if not specified otherwise.
 Be precise with all the values.
