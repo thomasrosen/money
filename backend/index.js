@@ -45,6 +45,7 @@ Strictly return as JSON:
       ],
       {
         max_tokens,
+        temperature: 0.5,
       }
     )
 
