@@ -8,12 +8,58 @@ import sharp from 'sharp'
 
 import express from 'express'
 
+import { ask_openai } from './ask_openai.js'
 
 // checkif ./cache/ exists
 if (!fs.existsSync('./cache/')) {
   fs.mkdirSync('./cache/', { recursive: true })
 }
 
+async function ocr_result_to_structured_json (ocr_result_text) {
+  // using open gpt
+
+  const prompt = `
+${ocr_result_text}
+
+Strictly return as JSON:
+- venue_name
+- venue_address
+- venue_email
+- venue_phone
+- datetime (yyyy-MM-dd HH:mm:ss Z)
+- total_amount_paid (Format: "Currency 000.00")
+- amount_of_tip
+- way_of_payment (Visa, Cash, and so on)
+- as an array: items (name, count and price_for_all)
+`
+
+  try {
+    const max_tokens = ocr_result_text.length // TODO: find a better way to set this (but this should be enough for now)
+
+    const result_json_text = await ask_openai(
+      [
+        {
+          role: 'user',
+          content: prompt,
+        }
+      ],
+      {
+        max_tokens,
+      }
+    )
+
+    if (result_json_text === null) {
+      return null
+    }
+
+    const result_structured = JSON.parse(result_json_text)
+    return result_structured
+  } catch (e) {
+    console.log('e', e)
+  }
+
+  return null
+}
 
 async function loadImage(buffer) {
   // I use the idea from the following answer to remove the shadows: https://stackoverflow.com/questions/44047819/increase-image-brightness-without-overflow/44054699#44054699
@@ -189,6 +235,7 @@ app.post('/ocr', async (req, res) => {
     const text = await client.getText()
     console.log('text\n\n', text)
 
+    const invoice_result = await ocr_result_to_structured_json(text)
 
     // // write hocr to disk for debugging
     // const hocr = (await client.getHOCR())
@@ -198,7 +245,10 @@ app.post('/ocr', async (req, res) => {
     res.setHeader('Content-Type', 'application/json')
     res.writeHead(200)
 
-    const body = { text }
+    const body = {
+      text,
+      invoice_result,
+    }
     res.end(JSON.stringify(body, null, 2))
   } catch (err) {
     res.writeHead(500)
