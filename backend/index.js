@@ -128,13 +128,12 @@ async function loadImage(buffer) {
     .ensureAlpha() // add alpha channel if not already present
 
 
-  // checkif ./images/ exists
-  if (!fs.existsSync('./cache/images/')) {
-    fs.mkdirSync('./cache/images/', { recursive: true })
-  }
-
-  // save image to disk for debugging
-  await image_better.toFile(`./cache/images/image.png`)
+  // // save image to disk for debugging
+  // // checkif ./images/ exists
+  // if (!fs.existsSync('./cache/images/')) {
+  //   fs.mkdirSync('./cache/images/', { recursive: true })
+  // }
+  // await image_better.toFile(`./cache/images/debug.png`)
 
   return {
     data: await image_better.raw().toBuffer(),
