@@ -1,6 +1,5 @@
-// import path from 'path'
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'path'
+import { fileURLToPath } from 'url' // used to get the directory name of the current file
 
 import { readFile, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
@@ -281,7 +280,6 @@ async function get_ocr_client(options) {
 }
 
 app.post('/api/ocr', async (req, res) => {
-  res.setHeader('Content-Type', 'application/json')
 
   const client = await get_ocr_client({
     lang: 'deu',
@@ -296,10 +294,6 @@ app.post('/api/ocr', async (req, res) => {
     const image = await loadImage(imageData)
     console.info('loaded image')
 
-    if (false) {
-      throw new Error('test')
-    }
-
     await client.loadImage(image)
     console.info('loaded image into ocr client')
 
@@ -313,6 +307,7 @@ app.post('/api/ocr', async (req, res) => {
     //   .replace('</body>', '<script src="https://unpkg.com/hocrjs"></script></body>')
     // await writeFile('./hocr.html', hocr)
 
+    res.setHeader('Content-Type', 'application/json')
     res.writeHead(200)
 
     const body = {
@@ -333,12 +328,8 @@ app.post('/api/ocr', async (req, res) => {
 
 
 
-// const static_files_path = path.join(__dirname,
-//   isDevEnvironment
-//     ? '../frontend/' // '../frontend/build/'
-//     : '../frontend/'
-// )
-// app.use(express.static(static_files_path))
+const static_files_path = path.join(__dirname, '../frontend/build/')
+app.use(express.static(static_files_path))
 
 
 
