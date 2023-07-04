@@ -14,9 +14,13 @@ import { ask_openai } from './ask_openai.js'
 
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
-// checkif ./cache/ exists
-if (!fs.existsSync('cache/')) {
-  fs.mkdirSync('cache/', { recursive: true })
+
+
+function use_cache() {
+  // checkif ./cache/ exists
+  if (!fs.existsSync('./cache/')) {
+    fs.mkdirSync('./cache/', { recursive: true })
+  }
 }
 
 async function ocr_result_to_structured_json (ocr_result_text) {
@@ -137,6 +141,7 @@ async function loadImage(buffer) {
 
   // save image to disk for debugging
   // checkif ./images/ exists
+  use_cache()
   if (!fs.existsSync('./cache/images/')) {
     fs.mkdirSync('./cache/images/', { recursive: true })
   }
@@ -169,6 +174,7 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
+  use_cache()
   const save_path = `./cache/${type}-${modelPath}`
 
   if (!existsSync(save_path)) {
