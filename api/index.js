@@ -175,7 +175,7 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
-  const save_path = `./tesseract-data/${type}-${modelPath}`
+  const save_path = `./api/tesseract-data/${type}-${modelPath}`
 
   if (!existsSync(save_path)) {
     throw new Error(`Model ${save_path} does not exist. Please download it manually.`)
