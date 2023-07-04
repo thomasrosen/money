@@ -1,0 +1,10 @@
+{
+  "trailingSlash": false,
+  "outputDirectory": "build",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    }
+  ]
+}
