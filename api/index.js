@@ -14,8 +14,6 @@ import express from 'express'
 
 import { ask_openai } from './ask_openai.js'
 
-console.log = console.info // to show logs in vercel
-
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,12 +43,11 @@ function log_path() {
 
 
 
-// function use_cache() {
-//   // checkif ./cache/ exists
-//   if (!fs.existsSync('./cache/')) {
-//     fs.mkdirSync('./cache/', { recursive: true })
-//   }
+// // checkif ./cache/ exists
+// if (!fs.existsSync('./cache/')) {
+//   fs.mkdirSync('./cache/', { recursive: true })
 // }
+
 
 async function ocr_result_to_structured_json (ocr_result_text) {
   console.info('sending to gpt-3')
@@ -202,7 +199,12 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
-  const save_path = `${__dirname}/tesseract-data/${type}-${modelPath}`
+  const save_folder = `${__dirname}/tesseract-data/`
+  const save_path = `${save_folder}${type}-${modelPath}`
+
+  if (!fs.existsSync(save_folder)) {
+    fs.mkdirSync(save_folder, { recursive: true })
+  }
 
   if (!existsSync(save_path)) {
     console.info('Downloading text recognition model...')
