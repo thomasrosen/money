@@ -1,3 +1,5 @@
+import path from 'path'
+
 import { readFile, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 import fs from 'fs'
@@ -9,6 +11,8 @@ import sharp from 'sharp'
 import express from 'express'
 
 import { ask_openai } from './ask_openai.js'
+
+const isDevEnvironment = process.env.environment === 'dev' || false
 
 // checkif ./cache/ exists
 if (!fs.existsSync('./cache/')) {
@@ -273,6 +277,17 @@ app.post('/ocr', async (req, res) => {
   //   client.destroy()
   // }
 })
+
+
+
+const static_files_path = path.join(__dirname,
+  isDevEnvironment
+    ? '../frontend/' // '../frontend/build/'
+    : '../frontend/'
+)
+app.use(express.static(static_files_path))
+
+
 
 const port = 13151 // the word money as its letter positions in the abc = 13 15 14 5 25
 const host = '0.0.0.0' // Uberspace wants 0.0.0.0
