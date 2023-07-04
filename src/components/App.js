@@ -10,11 +10,8 @@ import {
 
 export default function App() {
 
-  const [error, setError] = React.useState(null)
-
   return <div className={`app_wrapper`}>
     <header>
-
       <h1>🏳️‍🌈 QR</h1>
 
       <a href="https://github.com/thomasrosen/money" target="_blank" rel="noreferrer">Sourcecode</a>
@@ -36,8 +33,6 @@ export default function App() {
 
       <br />
       <br />
-
-      {error && <p>Error: {error}</p>}
 
       <Outlet />
     </main>
