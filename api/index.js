@@ -18,30 +18,6 @@ import { ask_openai } from './ask_openai.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function log_path() {
-  console.info('directory-name 👉️', __dirname);
-
-  console.info(process.cwd())
-  console.info(' ')
-
-  // list all files in the directory
-  fs.readdir(__dirname, (err, files) => {
-    if (err) {
-      throw err
-    }
-
-    // files object contains all files names
-    // log them on console
-    files.forEach(file => {
-      console.info(file)
-    })
-  })
-  console.info(' ')
-
-}
-
-
-
 // // checkif ./cache/ exists
 // if (!fs.existsSync('./cache/')) {
 //   fs.mkdirSync('./cache/', { recursive: true })
@@ -233,8 +209,6 @@ console.info('Initializing server...')
 const app = express()
 
 app.get('/api', (req, res) => {
-  log_path()
-
   const path = `/api/item/item_id`;
   res.setHeader('Content-Type', 'text/html');
   res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
@@ -328,7 +302,8 @@ app.post('/api/ocr', async (req, res) => {
 
 
 
-const static_files_path = path.join(__dirname, '../frontend/build/')
+// const save_folder = `${__dirname}/build/`
+const static_files_path = path.join(__dirname, '../build/')
 app.use(express.static(static_files_path))
 
 
