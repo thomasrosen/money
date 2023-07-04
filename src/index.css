@@ -9,12 +9,23 @@ body {
 
 
 :root {
-  --text-color: #000b13;
+  --text-color: #00150f;
   --background-color: #fff;
-  --primary-color: #007ed9;
+  --primary-color: #00845E;
 
   --content-box-width: 620px;
-  
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-color: #fff;
+    --background-color: #00150f;
+    --primary-color: #00d095;
+  }
+}
+
+:root {
+  --content-box-width: 620px;
+
   --font-family-headline: "Ubuntu Mono", Ubuntu, sans-serif;
   --font-family-text: Ubuntu, sans-serif;
   --font-family-code: Ubuntu Mono, source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
