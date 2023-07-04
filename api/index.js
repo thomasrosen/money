@@ -208,21 +208,30 @@ async function loadModel(options) {
   const save_path = `${__filename}/tesseract-data/${type}-${modelPath}`
   console.info('save_path', save_path)
 
-  if (!existsSync(save_path)) {
-    throw new Error(`Model ${save_path} does not exist. Please download it manually.`)
-
-    // console.info('Downloading text recognition model...')
-    // const modelURL = `https://github.com/tesseract-ocr/tessdata_${type}/raw/main/${modelPath}`
-    // const response = await fetch(modelURL)
-    // if (!response.ok) {
-    //   process.stderr.write(`Failed to download model from ${modelURL}`)
-    //   process.exit(1)
-    // }
-    // const data = await response.arrayBuffer()
-    // return new Uint8Array(data)
-    // // await writeFile(save_path, new Uint8Array(data))
+  try {
+    const data = await readFile(save_path)
+    return new Uint8Array(data)
+  } catch (error) {
+    console.error('error-load-try', error)
   }
-  return readFile(save_path)
+
+  return null
+
+  // if (!existsSync(save_path)) {
+  //   throw new Error(`Model ${save_path} does not exist. Please download it manually.`)
+
+  //   // console.info('Downloading text recognition model...')
+  //   // const modelURL = `https://github.com/tesseract-ocr/tessdata_${type}/raw/main/${modelPath}`
+  //   // const response = await fetch(modelURL)
+  //   // if (!response.ok) {
+  //   //   process.stderr.write(`Failed to download model from ${modelURL}`)
+  //   //   process.exit(1)
+  //   // }
+  //   // const data = await response.arrayBuffer()
+  //   // return new Uint8Array(data)
+  //   // // await writeFile(save_path, new Uint8Array(data))
+  // }
+  // return readFile(save_path)
 }
 
 async function readRequestBody(request) {
