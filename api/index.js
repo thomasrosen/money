@@ -109,8 +109,6 @@ Be precise with all the values.
 }
 
 async function loadImage(buffer) {
-  console.info('loadImage()')
-  try {
   // I use the idea from the following answer to remove the shadows: https://stackoverflow.com/questions/44047819/increase-image-brightness-without-overflow/44054699#44054699
 
   const image_bw = await sharp(buffer)
@@ -134,16 +132,10 @@ async function loadImage(buffer) {
     height = tmp
   }
 
-  let image_blurred = null
-  try {
-  image_blurred = await sharp(await image_bw.clone().toBuffer())
+  const image_blurred = await sharp(await image_bw.clone().toBuffer())
     .median(61) // median-blur // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines
     .blur(1) // TODO is this extra blur necessary?
     .normalise()
-    console.info('image_blurred', image_blurred)
-  } catch (error) {
-    console.error('error', error)
-  }
 
   const bw_buffer = await image_bw.extractChannel('red').raw().toBuffer()
 
@@ -163,8 +155,6 @@ async function loadImage(buffer) {
       }
       return rgb
     })
-
-  console.log('new_grayscale.length', new_grayscale.length)
 
   const image_better = await sharp(Buffer.from(new_grayscale), {
     raw: {
@@ -186,21 +176,14 @@ async function loadImage(buffer) {
   // }
   // await image_better.toFile(`./cache/images/debug.png`)
 
-  console.log('image_better.length', (await image_better.raw().toBuffer()).length)
   return {
     data: await image_better.raw().toBuffer(),
     width,
     height,
   }
-} catch (error) {
-    console.error('error-loadImage', error)
-}
 }
 
 async function loadModel(options) {
-  console.info('loadModel()')
-  log_path()
-
   let {
     lang = 'eng',
     type = 'fast',
@@ -220,32 +203,20 @@ async function loadModel(options) {
   }
 
   const save_path = `${__dirname}/tesseract-data/${type}-${modelPath}`
-  console.info('save_path', save_path)
 
-  try {
-    const data = await readFile(save_path)
-    return new Uint8Array(data)
-  } catch (error) {
-    console.error('error-load-try', error)
+  if (!existsSync(save_path)) {
+    console.info('Downloading text recognition model...')
+    const modelURL = `https://github.com/tesseract-ocr/tessdata_${type}/raw/main/${modelPath}`
+    const response = await fetch(modelURL)
+    if (!response.ok) {
+      process.stderr.write(`Failed to download model from ${modelURL}`)
+      process.exit(1)
+    }
+    const data = await response.arrayBuffer()
+    await writeFile(save_path, new Uint8Array(data))
   }
 
-  return null
-
-  // if (!existsSync(save_path)) {
-  //   throw new Error(`Model ${save_path} does not exist. Please download it manually.`)
-
-  //   // console.info('Downloading text recognition model...')
-  //   // const modelURL = `https://github.com/tesseract-ocr/tessdata_${type}/raw/main/${modelPath}`
-  //   // const response = await fetch(modelURL)
-  //   // if (!response.ok) {
-  //   //   process.stderr.write(`Failed to download model from ${modelURL}`)
-  //   //   process.exit(1)
-  //   // }
-  //   // const data = await response.arrayBuffer()
-  //   // return new Uint8Array(data)
-  //   // // await writeFile(save_path, new Uint8Array(data))
-  // }
-  // return readFile(save_path)
+  return readFile(save_path)
 }
 
 async function readRequestBody(request) {
@@ -308,22 +279,20 @@ async function get_ocr_client(options) {
 }
 
 app.post('/api/ocr', async (req, res) => {
-  console.info('\n\nPOST /ocr\n')
-
   res.setHeader('Content-Type', 'application/json')
 
   const client = await get_ocr_client({
     lang: 'deu',
     type: 'fast',
   })
-  console.info('loaded ocr client')
+  console.info('initialized ocr client')
 
   try {
 
     const imageData = await readRequestBody(req)
     console.info(imageData.length, 'bytes of image data received')
     const image = await loadImage(imageData)
-    console.info('loaded image', image)
+    console.info('loaded image')
 
     if (false) {
       throw new Error('test')
@@ -350,7 +319,7 @@ app.post('/api/ocr', async (req, res) => {
     }
     res.end(JSON.stringify(body, null, 2))
   } catch (err) {
-    console.error('error-in-try', err)
+    console.error('error in /api/ocr', err)
     res.writeHead(500)
     res.end(JSON.stringify({ error: err.message }))
   }
