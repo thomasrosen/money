@@ -1,5 +1,5 @@
 import express from 'express'
-const app = express()
+export const app = express()
 
 app.get('/api', (req, res) => {
   const path = `/api/item/item_id`;
@@ -12,5 +12,3 @@ app.get('/api/item/:slug', (req, res) => {
   const { slug } = req.params;
   res.end(`Item: ${slug}`);
 });
-
-module.exports = app;
