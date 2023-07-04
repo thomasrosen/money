@@ -7,13 +7,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 :root {
   --text-color: #00150f;
   --background-color: #fff;
   --primary-color: #00845E;
-
-  --content-box-width: 620px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,7 +21,7 @@ body {
 }
 
 :root {
-  --content-box-width: 620px;
+  --content-box-width: 500px;
 
   --font-family-headline: "Ubuntu Mono", Ubuntu, sans-serif;
   --font-family-text: Ubuntu, sans-serif;
@@ -124,6 +121,11 @@ input[type="search"] {
 button {
   cursor: pointer;
 }
+button.primary {
+  color: var(--background-color);
+  fill: var(--background-color);
+  background: var(--primary-color);
+}
 button.small {
   padding: 5px 10px;
   font-size: 14px;
@@ -141,8 +143,18 @@ button:hover {
 	background: var(--text-color);
 	text-decoration: none;
 }
+button.primary:hover {
+  box-shadow: 0 0 0 10px var(--primary-color);
+  color: var(--background-color);
+  fill: var(--background-color);
+  background: var(--primary-color);
+  text-decoration: none;
+}
 button.small:hover {
   box-shadow: 0 0 0 5px var(--text-color);
+}
+button.primary.small:hover {
+  box-shadow: 0 0 0 5px var(--primary-color);
 }
 button:active,
 button:focus,

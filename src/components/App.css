@@ -39,11 +39,6 @@ main {
   box-shadow: -1px 0 0 0 var(--text-color);
 }
 
-main p {
-  width: 500px;
-  max-width: 100%;
-}
-
 /* hide sidebar on small screens */
 @media (max-width: 900px) {
   nav {
