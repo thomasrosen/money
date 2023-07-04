@@ -23,6 +23,22 @@ function log_path() {
   console.info('directory-name 👉️', __dirname);
 
   console.info(process.cwd())
+  console.info(' ')
+
+  // list all files in the directory
+  fs.readdir(__dirname, (err, files) => {
+    if (err) {
+      throw err
+    }
+
+    // files object contains all files names
+    // log them on console
+    files.forEach(file => {
+      console.info(file)
+    })
+  })
+  console.info(' ')
+
 }
 
 
