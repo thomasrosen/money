@@ -109,6 +109,8 @@ Be precise with all the values.
 }
 
 async function loadImage(buffer) {
+  console.info('loadImage()')
+  try {
   // I use the idea from the following answer to remove the shadows: https://stackoverflow.com/questions/44047819/increase-image-brightness-without-overflow/44054699#44054699
 
   const image_bw = await sharp(buffer)
@@ -181,6 +183,9 @@ async function loadImage(buffer) {
     width,
     height,
   }
+} catch (error) {
+    console.error('error-loadImage', error)
+}
 }
 
 async function loadModel(options) {
@@ -307,7 +312,7 @@ app.post('/api/ocr', async (req, res) => {
     const imageData = await readRequestBody(req)
     console.info(imageData.length, 'bytes of image data received')
     const image = await loadImage(imageData)
-    console.info('loaded image')
+    console.info('loaded image', image)
 
     if (false) {
       throw new Error('test')
