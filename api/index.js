@@ -16,12 +16,12 @@ import { ask_openai } from './ask_openai.js'
 
 
 
-function use_cache() {
-  // checkif ./cache/ exists
-  if (!fs.existsSync('./cache/')) {
-    fs.mkdirSync('./cache/', { recursive: true })
-  }
-}
+// function use_cache() {
+//   // checkif ./cache/ exists
+//   if (!fs.existsSync('./cache/')) {
+//     fs.mkdirSync('./cache/', { recursive: true })
+//   }
+// }
 
 async function ocr_result_to_structured_json (ocr_result_text) {
   console.log('sending to gpt-3')
@@ -139,13 +139,13 @@ async function loadImage(buffer) {
     .ensureAlpha() // add alpha channel if not already present
 
 
-  // save image to disk for debugging
-  // checkif ./images/ exists
-  use_cache()
-  if (!fs.existsSync('./cache/images/')) {
-    fs.mkdirSync('./cache/images/', { recursive: true })
-  }
-  await image_better.toFile(`./cache/images/debug.png`)
+  // // save image to disk for debugging
+  // // checkif ./images/ exists
+  // use_cache()
+  // if (!fs.existsSync('./cache/images/')) {
+  //   fs.mkdirSync('./cache/images/', { recursive: true })
+  // }
+  // await image_better.toFile(`./cache/images/debug.png`)
 
   return {
     data: await image_better.raw().toBuffer(),
@@ -174,8 +174,7 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
-  use_cache()
-  const save_path = `./cache/${type}-${modelPath}`
+  const save_path = `./tesseract-data/${type}-${modelPath}`
 
   if (!existsSync(save_path)) {
     console.info('Downloading text recognition model...')
@@ -186,7 +185,8 @@ async function loadModel(options) {
       process.exit(1)
     }
     const data = await response.arrayBuffer()
-    await writeFile(save_path, new Uint8Array(data))
+    return data
+    // await writeFile(save_path, new Uint8Array(data))
   }
   return readFile(save_path)
 }
