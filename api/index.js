@@ -15,8 +15,8 @@ import { ask_openai } from './ask_openai.js'
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
 // checkif ./cache/ exists
-if (!fs.existsSync('./cache/')) {
-  fs.mkdirSync('./cache/', { recursive: true })
+if (!fs.existsSync('cache/')) {
+  fs.mkdirSync('cache/', { recursive: true })
 }
 
 async function ocr_result_to_structured_json (ocr_result_text) {
