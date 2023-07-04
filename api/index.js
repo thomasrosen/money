@@ -134,10 +134,16 @@ async function loadImage(buffer) {
     height = tmp
   }
 
-  const image_blurred = await sharp(await image_bw.clone().toBuffer())
+  let image_blurred = null
+  try {
+  image_blurred = await sharp(await image_bw.clone().toBuffer())
     .median(61) // median-blur // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines
     .blur(1) // TODO is this extra blur necessary?
     .normalise()
+    console.info('image_blurred', image_blurred)
+  } catch (error) {
+    console.error('error', error)
+  }
 
   const bw_buffer = await image_bw.extractChannel('red').raw().toBuffer()
 
