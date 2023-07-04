@@ -11,12 +11,14 @@ body {
   --text-color: #00150f;
   --background-color: #fff;
   --primary-color: #00845E;
+  --error-color: #840032;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --text-color: #fff;
     --background-color: #00150f;
     --primary-color: #00d095;
+    --error-color: #840032;
   }
 }
 
