@@ -14,6 +14,8 @@ import express from 'express'
 
 import { ask_openai } from './ask_openai.js'
 
+console.log = console.info // to show logs in vercel
+
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
 const __filename = fileURLToPath(import.meta.url);
@@ -204,6 +206,7 @@ async function loadModel(options) {
   }
 
   const save_path = `${__filename}/tesseract-data/${type}-${modelPath}`
+  console.info('save_path', save_path)
 
   if (!existsSync(save_path)) {
     // throw new Error(`Model ${save_path} does not exist. Please download it manually.`)
