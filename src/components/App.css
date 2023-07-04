@@ -3,7 +3,6 @@
   height: auto;
 
   --header-height: 64px;
-  --sidebar-width: 400px;
 
   background-color: var(--background-color);
   color: var(--text-color);
@@ -30,22 +29,11 @@ header h1 {
   font-size: 40px;
 }
 
-nav {
-  position: absolute;
-  top: 64px;
-  left: 0;
-  width: var(--sidebar-width);
-  padding: 32px;
-  padding-block-end: 25vh;
-
-  box-shadow: inset -1px 0 0 0 var(--text-color);
-}
-
 main {
   position: absolute;
   top: 64px;
   right: 0;
-  left: var(--sidebar-width);
+  left: 0;
   padding: 32px;
   padding-block-end: 25vh;
   box-shadow: -1px 0 0 0 var(--text-color);
