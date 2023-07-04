@@ -188,7 +188,7 @@ async function loadModel(options) {
       process.exit(1)
     }
     const data = await response.arrayBuffer()
-    return data
+    return new Uint8Array(data)
     // await writeFile(save_path, new Uint8Array(data))
   }
   return readFile(save_path)
