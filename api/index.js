@@ -124,7 +124,7 @@ async function loadImage(buffer) {
     .normalise() // full range 0 to 255
 
   let { width, height, orientation } = await image_bw.metadata()
-  // console.info('width, height, orientation', width, height, orientation)
+  console.info('width, height, orientation', width, height, orientation)
 
   if (orientation === 6 || orientation === 8) {
     // swap width and height if orientation is 6 or 8
@@ -178,6 +178,7 @@ async function loadImage(buffer) {
   // }
   // await image_better.toFile(`./cache/images/debug.png`)
 
+  console.log('image_better.length', (await image_better.raw().toBuffer()).length)
   return {
     data: await image_better.raw().toBuffer(),
     width,
