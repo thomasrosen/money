@@ -1,4 +1,5 @@
-const app = require('express')();
+import express from 'express'
+const app = express()
 
 app.get('/api', (req, res) => {
   const path = `/api/item/item_id`;
