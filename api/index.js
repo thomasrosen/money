@@ -155,6 +155,7 @@ async function loadImage(buffer) {
 }
 
 async function loadModel(options) {
+  console.log('loadModel()')
 
   let {
     lang = 'eng',
