@@ -2,6 +2,7 @@
   "name": "money",
   "version": "0.1.0",
   "private": false,
+  "homepage": "https://money.thomasrosen.me/",
   "type": "module",
   "dependencies": {
     "@reduxjs/toolkit": "^1.9.1",
