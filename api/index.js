@@ -296,6 +296,7 @@ app.post('/api/ocr', async (req, res) => {
   try {
 
     const imageData = await readRequestBody(req)
+    console.info(imageData.length, 'bytes of image data received')
     const image = await loadImage(imageData)
     console.info('loaded image')
 
@@ -325,6 +326,7 @@ app.post('/api/ocr', async (req, res) => {
     }
     res.end(JSON.stringify(body, null, 2))
   } catch (err) {
+    console.error('error-in-try', err)
     res.writeHead(500)
     res.end(JSON.stringify({ error: err.message }))
   }
