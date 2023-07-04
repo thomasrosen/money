@@ -16,10 +16,10 @@ import { ask_openai } from './ask_openai.js'
 
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function log_path() {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
   console.info('directory-name 👉️', __dirname);
 
   console.info(process.cwd())
@@ -203,7 +203,7 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
-  const save_path = `./tesseract-data/${type}-${modelPath}`
+  const save_path = `${__filename}/tesseract-data/${type}-${modelPath}`
 
   if (!existsSync(save_path)) {
     // throw new Error(`Model ${save_path} does not exist. Please download it manually.`)
