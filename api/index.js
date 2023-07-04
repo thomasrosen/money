@@ -18,11 +18,11 @@ import { ask_openai } from './ask_openai.js'
 
 
 function log_path() {
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-console.log('directory-name 👉️', __dirname);
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  console.info('directory-name 👉️', __dirname);
 
-console.log(process.cwd())
+  console.info(process.cwd())
 }
 
 
