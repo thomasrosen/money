@@ -205,7 +205,7 @@ async function loadModel(options) {
       modelPath = 'eng.traineddata'
   }
 
-  const save_path = `${__filename}/tesseract-data/${type}-${modelPath}`
+  const save_path = `${__dirname}/api/tesseract-data/${type}-${modelPath}`
   console.info('save_path', save_path)
 
   try {
