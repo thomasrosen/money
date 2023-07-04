@@ -158,6 +158,8 @@ async function loadImage(buffer) {
       return rgb
     })
 
+  console.log('new_grayscale.length', new_grayscale.length)
+
   const image_better = await sharp(Buffer.from(new_grayscale), {
     raw: {
       width,
