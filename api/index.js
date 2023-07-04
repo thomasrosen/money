@@ -310,6 +310,8 @@ async function get_ocr_client(options) {
 app.post('/api/ocr', async (req, res) => {
   console.info('\n\nPOST /ocr\n')
 
+  res.setHeader('Content-Type', 'application/json')
+
   const client = await get_ocr_client({
     lang: 'deu',
     type: 'fast',
@@ -340,7 +342,6 @@ app.post('/api/ocr', async (req, res) => {
     //   .replace('</body>', '<script src="https://unpkg.com/hocrjs"></script></body>')
     // await writeFile('./hocr.html', hocr)
 
-    res.setHeader('Content-Type', 'application/json')
     res.writeHead(200)
 
     const body = {
