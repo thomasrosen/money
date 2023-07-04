@@ -17,12 +17,13 @@ import { ask_openai } from './ask_openai.js'
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
 
-
+function log_path() {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 console.log('directory-name 👉️', __dirname);
 
 console.log(process.cwd())
+}
 
 
 
@@ -166,6 +167,7 @@ async function loadImage(buffer) {
 
 async function loadModel(options) {
   console.log('loadModel()')
+  log_path()
 
   let {
     lang = 'eng',
@@ -217,6 +219,8 @@ console.info('Initializing server...')
 const app = express()
 
 app.get('/api', (req, res) => {
+  log_path()
+
   const path = `/api/item/item_id`;
   res.setHeader('Content-Type', 'text/html');
   res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
