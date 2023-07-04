@@ -3,7 +3,7 @@ import {
 } from 'react-router-dom'
 
 import App from './App.js'
-import Welcome from './pages/welcome.js'
+import Upload from './pages/upload.js'
 
 export const router = createHashRouter([
   {
@@ -12,11 +12,11 @@ export const router = createHashRouter([
     children: [
       {
         path: '/',
-        element: <Welcome />,
+        element: <Upload />,
       },
       {
         path: '*',
-        element: <Welcome />,
+        element: <Upload />,
       },
     ]
   },
