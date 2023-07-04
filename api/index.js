@@ -51,7 +51,7 @@ function log_path() {
 // }
 
 async function ocr_result_to_structured_json (ocr_result_text) {
-  console.log('sending to gpt-3')
+  console.info('sending to gpt-3')
 
   const prompt = `
 ${ocr_result_text}
@@ -99,8 +99,8 @@ Be precise with all the values.
 
     const result_structured = JSON.parse(result_json_text)
     return result_structured
-  } catch (e) {
-    console.log('e', e)
+  } catch (error) {
+    console.error('error', error)
   }
 
   return null
@@ -120,7 +120,7 @@ async function loadImage(buffer) {
     .normalise() // full range 0 to 255
 
   let { width, height, orientation } = await image_bw.metadata()
-  // console.log('width, height, orientation', width, height, orientation)
+  // console.info('width, height, orientation', width, height, orientation)
 
   if (orientation === 6 || orientation === 8) {
     // swap width and height if orientation is 6 or 8
@@ -182,7 +182,7 @@ async function loadImage(buffer) {
 }
 
 async function loadModel(options) {
-  console.log('loadModel()')
+  console.info('loadModel()')
   log_path()
 
   let {
@@ -282,29 +282,29 @@ async function get_ocr_client(options) {
 }
 
 app.post('/api/ocr', async (req, res) => {
-  console.log('\n\nPOST /ocr\n')
+  console.info('\n\nPOST /ocr\n')
 
   const client = await get_ocr_client({
     lang: 'deu',
     type: 'fast',
   })
-  console.log('loaded ocr client')
+  console.info('loaded ocr client')
 
   try {
 
     const imageData = await readRequestBody(req)
     const image = await loadImage(imageData)
-    console.log('loaded image')
+    console.info('loaded image')
 
     if (false) {
       throw new Error('test')
     }
 
     await client.loadImage(image)
-    console.log('loaded image into ocr client')
+    console.info('loaded image into ocr client')
 
     const text = await client.getText()
-    console.log('got text from ocr client')
+    console.info('got text from ocr client')
 
     const invoice_result = await ocr_result_to_structured_json(text)
 
