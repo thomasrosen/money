@@ -303,8 +303,8 @@ app.post('/api/ocr', async (req, res) => {
 
 
 
-const port = 13151 // the word money as its letter positions in the abc = 13 15 14 5 25
-const host = '0.0.0.0' // Uberspace wants 0.0.0.0
+const port = process.env.PORT || 13151 // the word money as its letter positions in the abc = 13 15 14 5 25
+const host = 'localhost'
 app.listen(port, host, () => {
   console.info(`Server listening \n at http://${host}:${port} \n and http://localhost:${port}`)
 })
