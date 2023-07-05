@@ -427,7 +427,11 @@ app.post('/api/ocr', async (req, res) => {
     const text = await client.getText()
     console.info('got text from ocr client')
 
+
+
     const invoice_result = await ocr_result_to_structured_json(text)
+    // const invoice_result = null
+    console.log('got json structure from text with gpt-3')
 
     // // write hocr to disk for debugging
     // const hocr = (await client.getHOCR())
