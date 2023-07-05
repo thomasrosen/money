@@ -207,3 +207,8 @@ hr {
   margin: 0;
 }
 
+.middle_box {
+  width: var(--content-box-width);
+  max-width: 100%;
+  margin: 0 auto;
+}
