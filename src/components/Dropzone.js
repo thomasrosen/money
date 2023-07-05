@@ -33,7 +33,7 @@ function Dropzone({ onChange }) {
     isDragAccept,
     isDragReject,
   } = useDropzone({
-    maxFiles: 1,
+    // maxFiles: 10,
     accept: {
       'image/*': ['.jpeg', '.png']
     },
@@ -53,7 +53,7 @@ function Dropzone({ onChange }) {
 
   return (
     <section className="container">
-      <button class="primary" {...getRootProps({ style })}>
+      <button className="primary" {...getRootProps({ style })}>
         <input {...getInputProps()} />
         {
           isDragReject

@@ -18,11 +18,7 @@ export default function App() {
     </header>
 
     <main>
-      <div style={{
-        width: 'var(--content-box-width)',
-        maxWidth: '100%',
-        margin: '0 auto',
-      }}>
+      <div className="middle_box">
         <p><strong>A very simple tool to keep track of some of your spendings.</strong></p>
 
         <p>The text recognition is handled on the server. But nothing is permanently stored there. All data is only on here in this browser on your computer. You can <strong>export and import</strong> the data to backup or move it to a different browser.</p>
