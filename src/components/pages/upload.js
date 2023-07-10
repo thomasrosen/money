@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
 import Dropzone from '../Dropzone.js'
 
+// import '../../db.js'
+
 const thumbsContainer = {
   display: 'flex',
   flexDirection: 'row',

@@ -8,9 +8,26 @@ import {
   Outlet,
 } from 'react-router-dom'
 
-export default function App() {
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 
-  return <div className={`app_wrapper`}>
+export default function App() {
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+
+  const theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: prefersDarkMode ? 'dark' : 'light',
+        },
+      }),
+    [prefersDarkMode],
+  );
+
+  return <ThemeProvider theme={theme}>
+    <CssBaseline />
+    <div className={`app_wrapper`}>
     <header>
       <h1>💶 Money</h1>
 
@@ -18,20 +35,26 @@ export default function App() {
     </header>
 
     <main>
-      <div className="middle_box">
-        <p><strong>A very simple tool to keep track of some of your spendings.</strong></p>
-
-        <p>The text recognition is handled on the server. But nothing is permanently stored there. All data is only on here in this browser on your computer. You can <strong>export and import</strong> the data to backup or move it to a different browser.</p>
-
-        <p>
-          The website is maintained by <a href="https://thomasrosen.me/" target="_blank" rel="noreferrer">Thomas Rosen</a>. You can contact me at <a href="mailto:money@thomasrosen.me">money@thomasrosen.me</a>.
-        </p>
-      </div>
-      <br />
-      <br />
+      <nav style={{
+        display: 'flex',
+        gap: '10px',
+        justifyContent: 'center', // center in rows
+        marginBlockEnd: '40px',
+      }}>
+        <a href="#/new">
+          <button>Add new Invoice</button>
+        </a>
+        <a href="#/">
+          <button>Overview</button>
+        </a>
+        <a href="#/upload">
+          <button>Upload</button>
+        </a>
+      </nav>
 
       <Outlet />
     </main>
 
   </div>
+  </ThemeProvider>
 }

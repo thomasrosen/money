@@ -3,7 +3,9 @@ import {
 } from 'react-router-dom'
 
 import App from './App.js'
-import Upload from './pages/upload.js'
+import Upload from './pages/Upload.js'
+import InvoiceList from './pages/InvoiceList.js'
+import Editor from './pages/Editor.js'
 
 export const router = createHashRouter([
   {
@@ -11,12 +13,20 @@ export const router = createHashRouter([
     element: <App />,
     children: [
       {
-        path: '/',
+        path: '/new',
+        element: <Editor />,
+      },
+      {
+        path: '/upload',
         element: <Upload />,
       },
       {
+        path: '/',
+        element: <InvoiceList />,
+      },
+      {
         path: '*',
-        element: <Upload />,
+        element: <InvoiceList />,
       },
     ]
   },
