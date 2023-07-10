@@ -17,7 +17,7 @@ export const router = createHashRouter([
         element: <Editor />,
       },
       {
-        path: '/upload',
+        path: '/ocr',
         element: <Upload />,
       },
       {

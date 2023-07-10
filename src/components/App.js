@@ -47,8 +47,8 @@ export default function App() {
         <a href="#/">
           <button>Overview</button>
         </a>
-        <a href="#/upload">
-          <button>Upload</button>
+        <a href="#/ocr">
+          <button>OCR</button>
         </a>
       </nav>
 
