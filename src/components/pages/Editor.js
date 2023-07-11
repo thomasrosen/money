@@ -233,6 +233,7 @@ export default function Editor() {
     }
 
     <button
+      className="primary"
       onClick={() => {
         console.log('value', value)
           dispatch(addInvoices(value))
