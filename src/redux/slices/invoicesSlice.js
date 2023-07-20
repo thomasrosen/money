@@ -1,4 +1,12 @@
-// import '../../db.js'
+import {
+  db_row_add,
+  // db_row_delete,
+  // db_row_get,
+  db_row_get_all,
+  // db_row_update,
+} from '../../db.js'
+
+import { v4 as uuidv4 } from 'uuid'
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 
@@ -11,19 +19,12 @@ export const invoicesSlice = createSlice({
     setInvoices: (state, action) => {
       state.invoices = action.payload
     },
-    addInvoices: (state, action) => {
-      state.invoices = [
-        ...state.invoices,
-        ...action.payload,
-      ]
-    },
   }
 })
 
 
 export const {
   setInvoices,
-  addInvoices,
 } = invoicesSlice.actions
 
 
@@ -44,33 +45,45 @@ export const empty_invoice = {
   images: [],
 }
 
+export function new_empty_invoice () {
+  return {
+    ...empty_invoice,
+    id: uuidv4(),
+    date_created: new Date(),
+    date_modified: new Date(),
+    data_issued: new Date(),
+  }
+}
+
+export const addInvoices = createAsyncThunk('invoices/addInvoices', async (newInvoices, thunkApi) => {
+  if (Array.isArray(newInvoices)) {
+    const {
+      dispatch,
+      getState,
+    } = thunkApi || {}
+
+    for (const newInvoice of newInvoices) {
+      await db_row_add('invoices', newInvoice)
+    }
+
+    const state = getState()
+
+    dispatch(setInvoices([
+      ...state.invoices,
+      ...newInvoices,
+    ]))
+  }
+})
+
 export const fetchInvoices = createAsyncThunk('invoices/fetchInvoices', async (value, thunkApi) => {
-  console.log('fetchInvoices')
+
   const {
     dispatch,
     // getState,
   } = thunkApi || {}
 
-  const data = [
-    {
-      ...empty_invoice,
-      id: '1',
-      place_name: 'Rewe',
-      place_address: 'streetname 42, 12345 city',
-      amount: 42.94,
-      amount_currency: '€',
-    },
-    {
-      ...empty_invoice,
-      id: '2',
-      place_name: 'Edeka',
-      place_address: 'streetname 42, 12345 city',
-      amount: 42.3,
-      amount_currency: '€',
-    }
-  ]
-
-  dispatch(setInvoices(data))
+  const invoices = await db_row_get_all('invoices')
+  dispatch(setInvoices(invoices))
 
   // const { filter } = getState()
 

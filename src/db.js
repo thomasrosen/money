@@ -1,7 +1,7 @@
 let db_cache = null;
 
 function db_init_inner() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve_db, reject_db) => {
     const dbName = 'database';
 
     const request = window.indexedDB.open(dbName, 2); // 2 is the version
@@ -9,7 +9,7 @@ function db_init_inner() {
     request.onerror = event => {
       // Handle errors.
       console.error('database-error', event);
-      reject('database-error');
+      reject_db('database-error');
     };
     request.onblocked = event => {
       // If some other tab is loaded with the database, then it needs to be closed before we can proceed.
@@ -18,29 +18,29 @@ function db_init_inner() {
     request.onupgradeneeded = event => {
       const db = event.target.result;
 
-      // Create an objectStore to hold information about our customers. We're
-      // going to use "ssn" as our key path because it's guaranteed to be
-      // unique - or at least that's what I was told during the kickoff meeting.
-      const objectStore = db.createObjectStore('invoices', { keyPath: 'id' })
-      objectStore.createIndex('place_name', 'place_name', { unique: false, locale: 'auto' })
-      objectStore.createIndex('cost_sum', 'cost_sum', { unique: false })
+      Promise.all([
+        // create all tables/objectStores
 
-      // Use transaction oncomplete to make sure the objectStore creation is
-      // finished before adding data into it.
-      objectStore.transaction.oncomplete = event => {
-        // Store values in the newly created objectStore.
-        // const customerObjectStore = db
-        //   .transaction("invoices", "readwrite")
-        //   .objectStore("invoices");
-        // // customerData.forEach((customer) => {
-        // //   customerObjectStore.add(customer);
-        // // });
-        resolve(db)
-      }
+        new Promise(resolve => {
+          // Create an objectStore to hold information.
+          const objectStore_invoices = db.createObjectStore('invoices', { keyPath: 'id' })
+          objectStore_invoices.createIndex('place_name', 'place_name', { unique: false, locale: 'auto' })
+          objectStore_invoices.createIndex('cost_sum', 'cost_sum', { unique: false })
+          // Use transaction oncomplete to make sure the objectStore creation is
+          // finished before adding data into it.
+          objectStore_invoices.transaction.oncomplete = event => {
+            resolve()
+          }
+        }),
+
+      ])
+        .then(() => {
+          resolve_db(db)
+        })
     }
     request.onsuccess = (event) => {
       const db = event.target.result;
-      resolve(db)
+      resolve_db(db)
       return;
     }
   });
@@ -104,7 +104,7 @@ function db_row_add(table, new_data) {
 }
 
 function db_row_get(table, id) {
-  new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const db = await db_init()
     db
       .transaction(table)
@@ -134,7 +134,7 @@ function db_row_delete(table, id) {
 }
 
 function db_row_update(table, new_data) {
-  new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const db = await db_init()
 
     const id = new_data.id
@@ -170,7 +170,7 @@ function db_row_update(table, new_data) {
 }
 
 function db_row_get_all(table) {
-  new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const db = await db_init()
 
     const objectStore = db

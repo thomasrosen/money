@@ -10,6 +10,7 @@ import {
   selectInvoices,
   addInvoices,
   empty_invoice,
+  new_empty_invoice,
 } from '../../redux/slices/invoicesSlice.js'
 
 import { v4 as uuidv4 } from 'uuid'
@@ -74,7 +75,7 @@ function MoneyAmountInput({
   onCurrencyChange,
 }) {
   const currency_label = '€ / $ / …'
-  return <div style={{ display: 'flex', gap: '10px' }}>
+  return <div style={{ display: 'flex', gap: '8px' }}>
     <Input
       style={{ width: '100px' }}
       label={currency_label}
@@ -116,64 +117,87 @@ function MoneyAmountInput({
   </div>
 }
 
+function get_item_options(invoices, key) {
+  return [...new Set(invoices
+    .flatMap(invoice => invoice?.items || [])
+    .map(option => String(option[key] || ''))
+    .filter(Boolean)
+  )]
+    .map(title => ({
+      title: title,
+      firstLetter: (
+        typeof title === 'string' && title.length > 0
+          ? title[0].toUpperCase()
+          : '?'
+      )
+    }))
+    .sort((a, b) => -b.title.localeCompare(a.title))
+}
+
 function ItemEditor ({
-  items = [],
   style,
   deafultValue,
   onChange,
 }) {
-  const [value, setValue] = useState(deafultValue || {})
+  const [value, setValue] = useState(deafultValue || {})
 
-  function get_item_options (items, key) {
-    return [...new Set(items
-      .map(option => String(option[key] || ''))
-      .filter(Boolean)
-    )]
-      .map(title => ({
-        title: title,
-        firstLetter: (
-          typeof title === 'string' && title.length > 0
-            ? title[0].toUpperCase()
-            : '?'
-        )
-      }))
-      .sort((a, b) => -b.title.localeCompare(a.title))
-  }
+  const invoices = useSelector(selectInvoices)
 
   return <div style={style}>
-
-    <Input
-      label="Item Name"
-      inputValue={value.title || ''}
-      options={get_item_options(items, 'title')}
-      getOptionLabel={option => option.title || ''}
-      groupBy={option => option.firstLetter || '?'}
-      onInputChange={(_, newTitle) => {
-        const newValue = {
-          ...value,
-          title: newTitle,
-        }
-        setValue(newValue)
-        onChange(newValue)
-      }}
-    />
-
+    <div style={{ display: 'flex', gap: '8px', marginBlockEnd: '16px' }}>
+      <TextField
+        style={{ width: '100px' }}
+        label="Quantity"
+        InputProps={{
+          // type: 'number',
+          // step: '0.01',
+          inputMode: 'numeric',
+          pattern: '[0-9,.]*',
+        }}
+        defaultValue={value?.quantity}
+        onChange={event => {
+          const newQuantity = event.target.value
+          const newValue = {
+            ...value,
+            quantity: newQuantity,
+          }
+          setValue(newValue)
+          onChange(newValue)
+        }}
+      />
+      <Input
+        fullWidth
+        label="Name"
+        inputValue={value.item_name || ''}
+        options={get_item_options(invoices, 'item_name')}
+        getOptionLabel={option => option.item_name || ''}
+        groupBy={option => option.firstLetter || '?'}
+        onInputChange={(_, newItemName) => {
+          const newValue = {
+            ...value,
+            item_name: newItemName,
+          }
+          setValue(newValue)
+          onChange(newValue)
+        }}
+      />
+    </div>
     <MoneyAmountInput
-      label="Price of Item"
-      amount={value?.amount || ''}
-      currency={value?.currency || ''}
-      onAmountChange={newAmount => {
+      label="Total Price"
+      amount={value?.price_total || ''}
+      currency={value?.price_total_currency || ''}
+      onAmountChange={newPriceTotal => {
         const newValue = {
           ...value,
-          amount: newAmount,
+          price_total: newPriceTotal,
         }
         setValue(newValue)
         onChange(newValue)
       }}
-      onCurrencyChange={newCurrency => {
+      onCurrencyChange={newPriceTotalCurrency => {
         const newValue = {
           ...value,
-          currency: newCurrency,
+          price_total_currency: newPriceTotalCurrency,
         }
         setValue(newValue)
         onChange(newValue)
@@ -184,10 +208,7 @@ function ItemEditor ({
 
 export default function Editor() {
 
-  const [invoice, setInvoice] = useState({
-    ...empty_invoice,
-    id: uuidv4(),
-  });
+  const [invoice, setInvoice] = useState(new_empty_invoice())
 
   const dispatch = useDispatch()
   const invoices = useSelector(selectInvoices)
@@ -202,7 +223,7 @@ export default function Editor() {
 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {
-      Object.keys(invoice).map(key => {
+      Object.keys(invoice || []).map(key => {
         const label = labels[key] || key
 
         if (editor_types[key] === 'number') {
@@ -288,8 +309,7 @@ export default function Editor() {
               items?.map((item, index) => {
                 return <ItemEditor
                   style={{
-                    marginBlockStart: '16px',
-                    marginBlockEnd: '16px',
+                    marginBlockStart: '32px',
                   }}
                   key={item.id || index}
                   deafultValue={item}
@@ -312,8 +332,10 @@ export default function Editor() {
                 />
               })
             }
-            <br />
             <button
+              style={{
+                marginBlockStart: '32px',
+              }}
               className="primary"
               onClick={() => {
                 const new_value = [
