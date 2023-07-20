@@ -51,6 +51,9 @@ export default function InvoiceList() {
               {/*<img src={invoice.image} alt={invoice.name} />*/}
               <strong>{invoice.place_name}</strong>
               <span>{invoice.place_address}</span>
+              <span>{invoice.cost_sum} {invoice.cost_sum_currency}</span>
+              <span>{invoice.data_issued}</span>
+              <span>{(invoice.items || []).length} Items</span>
             </div>
           })
         }
