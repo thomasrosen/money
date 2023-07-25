@@ -152,6 +152,12 @@ button.primary {
   background: var(--primary-color);
   --shadow-color: var(--primary-color);
 }
+button.text {
+  color: var(--text-color);
+  fill: var(--text-color);
+  background: var(--background-color);
+  --shadow-color: var(--background-color);
+}
 button.small {
   padding: 5px 10px;
   font-size: 14px;
@@ -244,4 +250,10 @@ hr {
   width: var(--content-box-width);
   max-width: 100%;
   margin: 0 auto;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
 }

@@ -31,6 +31,11 @@ export default function InvoiceList() {
       The website is maintained by <a href="https://thomasrosen.me/" target="_blank" rel="noreferrer">Thomas Rosen</a>. You can contact me at <a href="mailto:money@thomasrosen.me">money@thomasrosen.me</a>.
     </p>
 
+    <nav>
+      <button>Export</button>
+      <button>Import</button>
+    </nav>
+
     <br />
     </div>
     <div className="middle_box" style={{ margin: '0' }}>
@@ -40,19 +45,30 @@ export default function InvoiceList() {
       ? <>
           <h2>Invoices</h2>
           <br />
-          <a href="#/edit">
-            <button className="primary">Add your first Invoice</button>
-          </a>
+          <nav>
+            <a href="#/edit">
+              <button className="primary">Add your first Invoice</button>
+            </a>
+            <a href="#/ocr">
+              <button> 🧾 Detect from Photos</button>
+            </a>
+          </nav>
         </>
       : <>
         <h2>Invoices</h2>
         <br />
-        <a href="#/edit">
-          <button className="primary">Add new Invoice</button>
-        </a>
+        <nav>
+          <a href="#/edit">
+            <button className="primary">Add new Invoice</button>
+          </a>
+          <a href="#/ocr">
+            <button> 🧾 Detect from Photos</button>
+          </a>
+        </nav>
 
         {
           invoices.map(invoice => {
+            const items_count = (invoice.items || []).length
             return <a
               key={invoice.id}
               href={`#/edit/${invoice.id}`}
@@ -65,8 +81,15 @@ export default function InvoiceList() {
                 {invoice.data_issued && ` • ${invoice.data_issued}`}
               </span>
 
-              <p>
-                {(invoice.items || []).length} Items for {invoice.cost_sum || '??.??'} {invoice.cost_sum_currency || '?'} {invoice.place_address ?? `at ${invoice.place_address}`}.
+              {invoice.place_address ?? <p style={{ display: 'inline' }}>{invoice.place_address}</p>}
+
+              <p style={{
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'space-between',
+              }}>
+                <span>{items_count === 1 ? `1 Item` : `${items_count} Items`} for</span>
+                <span>{invoice.cost_sum || '??.??'} {invoice.cost_sum_currency || '?'}</span>
               </p>
             </a>
           })

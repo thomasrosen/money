@@ -44,7 +44,7 @@ const editor_types = {
   // amount_of_tip_currency: 'string',
   way_of_payment: 'string',
   items: 'item',
-  images: 'ids',
+  // images: 'image',
 }
 
 function Input ({ label, ...props }) {
@@ -136,10 +136,10 @@ function get_item_options(invoices, key) {
 
 function ItemEditor ({
   style,
-  deafultValue,
+  defaultValue,
   onChange,
 }) {
-  const [value, setValue] = useState(deafultValue || {})
+  const [value, setValue] = useState(defaultValue || {})
 
   const invoices = useSelector(selectInvoices)
 
@@ -217,7 +217,6 @@ export default function Editor() {
   const invoices = useSelector(selectInvoices)
 
   useEffect(() => {
-    console.log('invoiceId', invoiceId)
     if (typeof invoiceId === 'string' && invoiceId.length > 0) {
       const new_invoice = new_empty_invoice()
       console.log('new_invoice', new_invoice)
@@ -248,9 +247,6 @@ export default function Editor() {
         <a href="#/">
           <button> ⬅️ Overview</button>
         </a>
-        <a href="#/ocr">
-          <button> 🧾 OCR</button>
-        </a>
       </nav>
 
       <p>Loading…</p>
@@ -266,9 +262,15 @@ export default function Editor() {
       <a href="#/">
         <button> ⬅️ Overview</button>
       </a>
-      <a href="#/ocr">
-        <button> 🧾 OCR</button>
-      </a>
+      <button
+        className="primary"
+        onClick={() => {
+          console.log('invoice', invoice)
+          dispatch(addInvoices([invoice]))
+        }}
+      >
+        Save Invoice
+      </button>
     </nav>
 
     <h2>
@@ -282,7 +284,7 @@ export default function Editor() {
 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {
-      Object.keys(invoice || {}).map(key => {
+      Object.keys(editor_types).map(key => {
         const label = labels[key] || key
 
         if (editor_types[key] === 'number') {
@@ -371,7 +373,7 @@ export default function Editor() {
                     marginBlockStart: '32px',
                   }}
                   key={item.id || index}
-                  deafultValue={item}
+                  defaultValue={item}
                   onChange={newValue => {
                     console.log('ItemEditor onchange', newValue)
 
@@ -395,7 +397,6 @@ export default function Editor() {
               style={{
                 marginBlockStart: '32px',
               }}
-              className="primary"
               onClick={() => {
                 const new_value = [
                   ...items,
@@ -416,6 +417,44 @@ export default function Editor() {
             <br />
           </div>
         }
+
+        /*
+        if (editor_types[key] === 'image') {
+          const images = (invoice[key] || [])
+          return <div key={key}>
+            <br />
+            <h3>Images</h3>
+            {
+              images?.map((image, index) => {
+                return <ImageEditor value={image} />
+              })
+            }
+            <button
+              style={{
+                marginBlockStart: '32px',
+              }}
+              className="primary"
+              onClick={() => {
+                const new_value = [
+                  ...images,
+                  {
+                    id: uuidv4()
+                  }
+                ]
+
+                setInvoice({
+                  ...invoice,
+                  [key]: new_value,
+                })
+              }}
+            >
+              Add Item
+            </button>
+            <br />
+            <br />
+          </div>
+        }
+        */
 
         if (editor_types[key] === 'hidden') {
           return null
@@ -458,16 +497,6 @@ export default function Editor() {
       })
       .filter(Boolean)
       }
-
-      <button
-        className="primary"
-        onClick={() => {
-          console.log('invoice', invoice)
-          dispatch(addInvoices([invoice]))
-        }}
-      >
-        Save Invoice
-      </button>
     </div>
 
   </div>

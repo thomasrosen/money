@@ -33,6 +33,17 @@ function db_init_inner() {
           }
         }),
 
+        new Promise(resolve => {
+          // Create an objectStore to hold information.
+          const objectStore_invoices = db.createObjectStore('photos', { keyPath: 'id' })
+          objectStore_invoices.createIndex('filename', 'filename', { unique: false, locale: 'auto' })
+          // Use transaction oncomplete to make sure the objectStore creation is
+          // finished before adding data into it.
+          objectStore_invoices.transaction.oncomplete = event => {
+            resolve()
+          }
+        }),
+
       ])
         .then(() => {
           resolve_db(db)

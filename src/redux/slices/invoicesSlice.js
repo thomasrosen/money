@@ -14,10 +14,14 @@ export const invoicesSlice = createSlice({
   name: 'invoices',
   initialState: {
     invoices: [],
+    photos: [],
   },
   reducers: {
     setInvoices: (state, action) => {
       state.invoices = action.payload
+    },
+    setPhotos: (state, action) => {
+      state.photos = action.payload
     },
   }
 })
@@ -25,6 +29,7 @@ export const invoicesSlice = createSlice({
 
 export const {
   setInvoices,
+  setPhotos,
 } = invoicesSlice.actions
 
 
@@ -45,6 +50,25 @@ export const empty_invoice = {
   images: [],
 }
 
+export const empty_photo = {
+
+  // Images:
+  //   - id[uuid]
+  //   // - date_created [iso date]
+  //   // - date_modified [iso date]
+  //   - filename[string]
+  //   - extracted_text[string]
+  //   - original_image[blob]
+  // - corrected_image [blob]
+
+  id: '',
+  date_created: '',
+  date_modified: '',
+  filename: '',
+  extracted_text: '',
+  original_image: null,
+}
+
 export function new_empty_invoice () {
   return {
     ...empty_invoice,
@@ -52,6 +76,15 @@ export function new_empty_invoice () {
     date_created: new Date(),
     date_modified: new Date(),
     data_issued: new Date(),
+  }
+}
+
+export function new_empty_photo() {
+  return {
+    ...empty_photo,
+    id: uuidv4(),
+    date_created: new Date(),
+    date_modified: new Date(),
   }
 }
 
@@ -71,6 +104,26 @@ export const addInvoices = createAsyncThunk('invoices/addInvoices', async (newIn
     dispatch(setInvoices([
       ...state.invoices,
       ...newInvoices,
+    ]))
+  }
+})
+
+export const addPhotos = createAsyncThunk('invoices/addPhotos', async (newPhotos, thunkApi) => {
+  if (Array.isArray(newPhotos)) {
+    const {
+      dispatch,
+      getState,
+    } = thunkApi || {}
+
+    for (const newPhoto of newPhotos) {
+      await db_row_add('photos', newPhoto)
+    }
+
+    const state = getState()
+
+    dispatch(setPhotos([
+      ...state.photos,
+      ...newPhotos,
     ]))
   }
 })
@@ -117,6 +170,18 @@ export const fetchInvoices = createAsyncThunk('invoices/fetchInvoices', async (v
   //   })
 })
 
+export const fetchPhotos = createAsyncThunk('invoices/fetchPhotos', async (value, thunkApi) => {
+
+  const {
+    dispatch,
+    // getState,
+  } = thunkApi || {}
+
+  const photos = await db_row_get_all('photos')
+  dispatch(setPhotos(photos))
+})
+
 export const selectInvoices = state => state.invoices.invoices
+export const selectPhotos = state => state.invoices.photos
 
 export default invoicesSlice.reducer
