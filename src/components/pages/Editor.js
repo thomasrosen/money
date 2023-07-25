@@ -9,11 +9,11 @@ import {
   fetchInvoices,
   selectInvoices,
   addInvoices,
-  empty_invoice,
   new_empty_invoice,
 } from '../../redux/slices/invoicesSlice.js'
 
 import { v4 as uuidv4 } from 'uuid'
+import { useParams } from 'react-router-dom'
 
 const currency_label = '€ / $ / …'
 const labels = {
@@ -207,23 +207,82 @@ function ItemEditor ({
 }
 
 export default function Editor() {
+  const { invoiceId } = useParams()
+  const [loading, setLoading] = useState(true)
+  const [isNew, setIsNew] = useState(true)
 
-  const [invoice, setInvoice] = useState(new_empty_invoice())
+  const [invoice, setInvoice] = useState({})
 
   const dispatch = useDispatch()
   const invoices = useSelector(selectInvoices)
 
   useEffect(() => {
+    console.log('invoiceId', invoiceId)
+    if (typeof invoiceId === 'string' && invoiceId.length > 0) {
+      const new_invoice = new_empty_invoice()
+      console.log('new_invoice', new_invoice)
+      new_invoice.id = invoiceId
+      new_invoice.place_name = 'hello_' + invoiceId
+      setInvoice(new_invoice)
+      setLoading(false)
+      setIsNew(false)
+    } else {
+      const new_invoice = new_empty_invoice()
+      setInvoice(new_invoice)
+      setLoading(false)
+      setIsNew(true)
+    }
+  }, [invoiceId, setInvoice, setLoading])
+
+  useEffect(() => {
     dispatch(fetchInvoices())
   }, [dispatch])
 
+  if (loading === true) {
+    return <div className="middle_box">
+      <nav style={{
+        display: 'flex',
+        gap: '10px',
+        marginBlockEnd: '40px',
+      }}>
+        <a href="#/">
+          <button> ⬅️ Overview</button>
+        </a>
+        <a href="#/ocr">
+          <button> 🧾 OCR</button>
+        </a>
+      </nav>
+
+      <p>Loading…</p>
+    </div>
+  }
+
   return <div className="middle_box">
-    <h2>Add new Invoice</h2>
+    <nav style={{
+      display: 'flex',
+      gap: '10px',
+      marginBlockEnd: '40px',
+    }}>
+      <a href="#/">
+        <button> ⬅️ Overview</button>
+      </a>
+      <a href="#/ocr">
+        <button> 🧾 OCR</button>
+      </a>
+    </nav>
+
+    <h2>
+      {
+        isNew
+          ? 'Add new Invoice'
+          : 'Edit Invoice'
+      }
+    </h2>
     <br />
 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {
-      Object.keys(invoice || []).map(key => {
+      Object.keys(invoice || {}).map(key => {
         const label = labels[key] || key
 
         if (editor_types[key] === 'number') {

@@ -9,16 +9,28 @@ body {
 
 :root {
   --text-color: #00150f;
+  --text-color-rgb: 0, 21, 15;
   --background-color: #fff;
+  --background-color-rgb: 255, 255, 255;
   --primary-color: #00845E;
+  --primary-color-rgb: 0, 132, 94;
   --error-color: #840032;
+  --error-color-rgb: 132, 0, 50;
+  --card-color: #e4e6e5; /* 10% of --text-color on --background-color */
+  --card-color-rgb: 228, 230, 229;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --text-color: #fff;
+    --text-color-rgb: 255, 255, 255;
     --background-color: #00150f;
+    --background-color-rgb: 0, 21, 15;
     --primary-color: #00d095;
+    --primary-color-rgb: 0, 208, 149;
     --error-color: #840032;
+    --error-color-rgb: 132, 0, 50;
+    --card-color: #1a2d28; /* 10% of --text-color on --background-color */
+    --card-color-rgb: 26, 45, 40;
   }
 }
 
@@ -28,6 +40,8 @@ body {
   --font-family-headline: "Ubuntu Mono", Ubuntu, sans-serif;
   --font-family-text: Ubuntu, sans-serif;
   --font-family-code: Ubuntu Mono, source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+
+  --transition: 0.2s ease;
 }
 
 * {
@@ -54,7 +68,7 @@ body {
   background: var(--background-color);
   color: var(--text-color);
   font-family: var(--font-family-text);
-  transition: color .2s ease, background .2s ease;
+  transition: color var(--transition), background-color var(--transition);
 }
 
 h1 {
@@ -115,7 +129,16 @@ input[type="search"] {
 	fill: var(--background-color);
 	background: var(--text-color);
 	font-weight: bold;
-	transition: box-shadow 0.2s ease;
+
+  --shadow-width: 0px;
+  --shadow-color: var(--text-color);
+  --shadow-amount: 0;
+  box-shadow: /* this gets rid of a weird 0.1px gap between box and shadow */
+    inset 0 0 calc(1px * var(--shadow-amount)) calc(1px * var(--shadow-amount)) var(--shadow-color),
+    0 0 0 calc(var(--shadow-width) * var(--shadow-amount)) var(--shadow-color),
+    0 0 calc(1px * var(--shadow-amount)) calc(1px * var(--shadow-amount)) var(--shadow-color);
+
+	transition: box-shadow var(--transition);
 }
 input[type="search"] {
   width: 100%;
@@ -127,36 +150,45 @@ button.primary {
   color: var(--background-color);
   fill: var(--background-color);
   background: var(--primary-color);
+  --shadow-color: var(--primary-color);
 }
 button.small {
   padding: 5px 10px;
   font-size: 14px;
 }
 button[data-selected="true"] {
-  box-shadow: 0 0 0 5px var(--text-color);
+  --shadow-width: 5px;
+  --shadow-color: var(--text-color);
+  --shadow-amount: 1;
 }
 button.small[data-selected="true"] {
-  box-shadow: 0 0 0 2px var(--text-color);
+  --shadow-width: 2px;
+  --shadow-color: var(--text-color);
 }
 button:hover {
-	box-shadow: 0 0 0 10px var(--text-color);
+  --shadow-width: 10px;
+  --shadow-color: var(--text-color);
+  --shadow-amount: 1;
 	color: var(--background-color);
 	fill: var(--background-color);
 	background: var(--text-color);
 	text-decoration: none;
 }
 button.primary:hover {
-  box-shadow: 0 0 0 10px var(--primary-color);
+  --shadow-width: 10px;
+  --shadow-color: var(--primary-color);
   color: var(--background-color);
   fill: var(--background-color);
   background: var(--primary-color);
   text-decoration: none;
 }
 button.small:hover {
-  box-shadow: 0 0 0 5px var(--text-color);
+  --shadow-width: 5px;
+  --shadow-color: var(--text-color);
 }
 button.primary.small:hover {
-  box-shadow: 0 0 0 5px var(--primary-color);
+  --shadow-width: 5px;
+  --shadow-color: var(--primary-color);
 }
 button:active,
 button:focus,
@@ -164,6 +196,7 @@ button.active {
 	color: var(--background-color);
 	fill: var(--background-color);
 	background: var(--text-color);
+  --shadow-color: var(--text-color);
 	text-decoration: none;
 }
 button:disabled {

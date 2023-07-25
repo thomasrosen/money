@@ -13,7 +13,11 @@ export const router = createHashRouter([
     element: <App />,
     children: [
       {
-        path: '/new',
+        path: '/edit',
+        element: <Editor />,
+      },
+      {
+        path: '/edit/:invoiceId',
         element: <Editor />,
       },
       {

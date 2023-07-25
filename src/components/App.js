@@ -35,23 +35,6 @@ export default function App() {
     </header>
 
     <main>
-      <nav style={{
-        display: 'flex',
-        gap: '10px',
-        justifyContent: 'center', // center in rows
-        marginBlockEnd: '40px',
-      }}>
-        <a href="#/new">
-          <button>Add new Invoice</button>
-        </a>
-        <a href="#/">
-          <button>Overview</button>
-        </a>
-        <a href="#/ocr">
-          <button>OCR</button>
-        </a>
-      </nav>
-
       <Outlet />
     </main>
 
