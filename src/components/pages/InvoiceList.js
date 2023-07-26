@@ -23,6 +23,9 @@ export default function InvoiceList() {
     gap: '0 32px',
   }}>
     <div className="middle_box" style={{ margin: '0' }}>
+    <h1 style={{ fontSize: '56px' }}>THIS IS NOT A WORKING PRODUCT!!!</h1>
+    <br />
+
     <p><strong>A very simple tool to keep track of some of your spendings.</strong></p>
 
     <p>The text recognition is handled on the server. But nothing is permanently stored there. All data is only on here in this browser on your computer. You can <strong>export and import</strong> the data to backup or move it to a different browser.</p>
