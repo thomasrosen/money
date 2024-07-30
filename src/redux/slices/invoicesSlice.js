@@ -95,7 +95,15 @@ export const addInvoices = createAsyncThunk('invoices/addInvoices', async (newIn
       getState,
     } = thunkApi || {}
 
-    for (const newInvoice of newInvoices) {
+    for (let i=0; i < newInvoices.length; i += 1) {
+      const newInvoice = newInvoices[i]
+
+      newInvoice.date_created = newInvoice.date_created.toString()
+      newInvoice.date_modified = newInvoice.date_modified.toString()
+      newInvoice.data_issued = newInvoice.data_issued.toString()
+
+      newInvoices[i] = newInvoice
+
       await db_row_add('invoices', newInvoice)
     }
 
@@ -115,7 +123,14 @@ export const addPhotos = createAsyncThunk('invoices/addPhotos', async (newPhotos
       getState,
     } = thunkApi || {}
 
-    for (const newPhoto of newPhotos) {
+    for (let i = 0; i < newPhotos.length; i += 1) {
+      const newPhoto = newPhotos[i]
+
+      newPhoto.date_created = newPhoto.date_created.toString()
+      newPhoto.date_modified = newPhoto.date_modified.toString()
+
+      newPhotos[i] = newPhoto
+
       await db_row_add('photos', newPhoto)
     }
 
@@ -183,5 +198,6 @@ export const fetchPhotos = createAsyncThunk('invoices/fetchPhotos', async (value
 
 export const selectInvoices = state => state.invoices.invoices
 export const selectPhotos = state => state.invoices.photos
+export const selectLatestTenPhotos = state => state.invoices.photos.slice(0, 10)
 
 export default invoicesSlice.reducer

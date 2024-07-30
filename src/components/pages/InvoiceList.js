@@ -1,15 +1,63 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 
 import { useSelector, useDispatch } from 'react-redux'
 import {
   fetchInvoices,
   selectInvoices,
+  selectLatestTenPhotos,
 } from '../../redux/slices/invoicesSlice.js'
+
+import Dropzone from '../Dropzone.js'
+
+
+
+const thumbsContainer = {
+  display: 'flex',
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  gap: '8px',
+  padding: '16px',
+  marginBlockEnd: '16px',
+}
+
+const thumb = {
+  border: '1px solid #eaeaea',
+  width: 'auto',
+  height: '100px',
+  padding: '4px',
+  borderRadius: '8px',
+}
+
+const img = {
+  display: 'block',
+  width: 'auto',
+  height: '100%',
+  borderRadius: '4px',
+}
+
+
 
 export default function InvoiceList() {
 
   const dispatch = useDispatch()
   const invoices = useSelector(selectInvoices)
+  const latestTenPhotos = useSelector(selectLatestTenPhotos)
+
+  const [files, setFiles] = useState([])
+
+  const onDropzoneChange = useCallback(acceptedFiles => {
+    acceptedFiles = acceptedFiles.map(file => Object.assign(file, {
+      preview: URL.createObjectURL(file)
+    }))
+
+    setFiles(acceptedFiles)
+  }, [])
+
+  const savePhotos = useCallback(() => {
+    console.log('files', files)
+
+    // setFiles([])
+  }, [files])
 
   useEffect(() => {
     dispatch(fetchInvoices())
@@ -43,31 +91,74 @@ export default function InvoiceList() {
     </div>
     <div className="middle_box" style={{ margin: '0' }}>
 
-    {
+      <h2>🧾 Detect Invoices</h2>
+
+      {
+        files.length > 0
+          ? <>
+            <div title="Selected Images." className="invoiceCard" style={thumbsContainer}>
+              {
+                files
+                  .map(file => (
+                    <div style={thumb} key={file.name}>
+                      <img
+                        alt={`${file.path} - ${file.size} bytes`}
+                        title={`${file.path} - ${file.size} bytes`}
+                        src={file.preview}
+                        style={img}
+                        // Revoke data uri after image is loaded
+                        onLoad={() => { URL.revokeObjectURL(file.preview) }}
+                      />
+                    </div>
+                  ))
+              }
+            </div>
+            <p>The photos will be temporarily uploaded and processed on the server. Once you receive the results, both the photos and any associated data will be stored only on your computer and completely deleted from the server.</p>
+            <button className="primary" onClick={savePhotos}>Save Photos</button>
+            <br />
+            <br />
+        </>
+          : <>
+            <br />
+            <Dropzone onChange={onDropzoneChange} />
+          </>
+      }
+
+
+      {
+        latestTenPhotos.length > 0
+          ? <div className="invoiceCard">
+            {
+            latestTenPhotos.map(photo => {
+              return <a
+                key={photo.id}
+                href={`#/photo/${photo.id}`}
+              >
+                <img alt="" src={photo.original_image} />
+              </a>
+            })
+            }
+          </div>
+          : null
+      }
+      <br />
+      <br />
+
+      <h2>Invoices</h2>
+      <br />
+      {
       invoices.length === 0
-      ? <>
-          <h2>Invoices</h2>
-          <br />
-          <nav>
+        ? <nav>
             <a href="#/edit">
               <button className="primary">Add your first Invoice</button>
             </a>
-            <a href="#/ocr">
-              <button> 🧾 Detect from Photos</button>
+          </nav>
+        : <>
+          <nav>
+            <a href="#/edit">
+              <button className="primary">Add new Invoice</button>
             </a>
           </nav>
-        </>
-      : <>
-        <h2>Invoices</h2>
-        <br />
-        <nav>
-          <a href="#/edit">
-            <button className="primary">Add new Invoice</button>
-          </a>
-          <a href="#/ocr">
-            <button> 🧾 Detect from Photos</button>
-          </a>
-        </nav>
 
         {
           invoices.map(invoice => {
@@ -97,8 +188,8 @@ export default function InvoiceList() {
             </a>
           })
         }
-      </>
-    }
+        </>
+      }
     </div>
   </div>
 }

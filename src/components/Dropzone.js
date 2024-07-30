@@ -25,7 +25,10 @@ const rejectStyle = {
 }
 
 
-function Dropzone({ onChange }) {
+function Dropzone({
+  label,
+  onChange,
+}) {
   const {
     getRootProps,
     getInputProps,
@@ -58,7 +61,7 @@ function Dropzone({ onChange }) {
         {
           isDragReject
           ? <strong>Only JPG and PNG images are allowed!</strong>
-          : <strong>Click or Drop an image here!</strong>
+          : <strong>{ label || 'Click or Drop a Photo here!' }</strong>
         }
       </button>
     </section>
