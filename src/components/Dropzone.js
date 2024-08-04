@@ -38,7 +38,7 @@ function Dropzone({
   } = useDropzone({
     // maxFiles: 10,
     accept: {
-      'image/*': ['.jpeg', '.png']
+      'image/*': ['.jpg', '.jpeg', '.png']
     },
     onDrop: onChange,
   })
@@ -60,8 +60,8 @@ function Dropzone({
         <input {...getInputProps()} />
         {
           isDragReject
-          ? <strong>Only JPG and PNG images are allowed!</strong>
-          : <strong>{ label || 'Click or Drop a Photo here!' }</strong>
+            ? <strong>Only JPG and PNG images are allowed!</strong>
+            : <strong>{label || 'Click or Drop a Photo here!'}</strong>
         }
       </button>
     </section>

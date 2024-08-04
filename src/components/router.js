@@ -2,15 +2,15 @@ import {
   createHashRouter,
 } from 'react-router-dom'
 
-import App from './App.js'
-import Upload from './pages/Upload.js'
-import InvoiceList from './pages/InvoiceList.js'
 import Editor from './pages/Editor.js'
+import InvoiceList from './pages/InvoiceList.js'
+import Upload from './pages/Upload.js'
 
 export const router = createHashRouter([
   {
     path: '/',
-    element: <App />,
+    // element: <App />,
+    element: <Upload />,
     children: [
       {
         path: '/edit',

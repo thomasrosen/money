@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import Dropzone from '../Dropzone.js'
 
 // import '../../db.js'
@@ -50,8 +50,11 @@ export default function Upload() {
 
   const [files, setFiles] = useState([])
   const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const onChange = useCallback(acceptedFiles => {
+    console.log('onChange-acceptedFiles', acceptedFiles)
+
     acceptedFiles = acceptedFiles.map(file => Object.assign(file, {
       preview: URL.createObjectURL(file)
     }))
@@ -60,29 +63,38 @@ export default function Upload() {
   }, [])
 
   const send_files = useCallback(async () => {
+    ; (async () => {
+      setLoading(true)
+    })()
+    console.log('send_files-files', files)
     if (files.length === 0) {
       throw new Error('No files selected')
     }
 
     const file = files[0]
-    console.log('file', file)
+    console.log('send_files-file', file)
 
     // const data_url = file_to_image(file)
 
-    // get image-blob-content from the file
+    // // get image-blob-content from the file
     // const imageResponse = await fetch(file.preview)
     // const imageBlob = await imageResponse.blob()
 
     // create a formdata object
-    // const formData = new FormData()
-    // formData.append('file', file)
+    const formData = new FormData()
+    formData.append('file', file)
+    console.log('send_files-formData', formData)
 
     // send the formdata to the server at /api/ocr using fetch
-    const response = await fetch(`${window.urls.api}ocr`, {
+    const url = `${window.urls.api}ocr`
+    console.log('url', url)
+    const response = await fetch(url, {
       method: 'POST',
-      body: file, // formData
+      body: formData
     })
     const json = await response.json()
+    console.log('send_files-json', json)
+    setLoading(false)
     setResult(json)
 
 
@@ -94,39 +106,43 @@ export default function Upload() {
 
   return <div>
     <div className="middle_box">
+      <h1>Hello</h1>
       <Dropzone onChange={onChange} />
       <br />
       {
         files.length > 0
-        ? <>
-          <h4>Selected Images</h4>
-          <aside style={thumbsContainer}>
-          {
-            files
-              .map(file => (
-            <div style={thumb} key={file.name}>
-              <img
-                alt={`${file.path} - ${file.size} bytes`}
-                title={`${file.path} - ${file.size} bytes`}
-                src={file.preview}
-                style={img}
-                // Revoke data uri after image is loaded
-                onLoad={() => { URL.revokeObjectURL(file.preview) }}
-              />
-            </div>
-              ))
-          }
-          </aside>
-          <button onClick={send_files}>Send one file</button>
-        </>
-        : null
+          ? <>
+            <h4>Selected Images</h4>
+            <aside style={thumbsContainer}>
+              {
+                files
+                  .map(file => (
+                    <div style={thumb} key={file.name}>
+                      <img
+                        alt={`${file.path} - ${file.size} bytes`}
+                        title={`${file.path} - ${file.size} bytes`}
+                        src={file.preview}
+                        style={img}
+                        // Revoke data uri after image is loaded
+                        onLoad={() => { URL.revokeObjectURL(file.preview) }}
+                      />
+                    </div>
+                  ))
+              }
+            </aside>
+            <button onClick={send_files}>Send one file</button>
+            {
+              loading ? <div>Loading...</div> : null
+            }
+          </>
+          : null
       }
       {
         result !== null
           ? <>
             <br />
             <br />
-            <pre><code>{JSON.stringify(result,null,2)}</code></pre>
+            <pre><code>{JSON.stringify(result, null, 2)}</code></pre>
           </>
           : null
       }

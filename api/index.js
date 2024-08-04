@@ -1,20 +1,13 @@
-import path from 'path'
-import { fileURLToPath } from 'url' // used to get the directory name of the current file
-
-import { readFile, writeFile } from 'fs/promises'
-import { existsSync } from 'fs'
-import fs from 'fs'
-
-import fetch from 'node-fetch'
-import { createOCRClient } from 'tesseract-wasm/node'
-import sharp from 'sharp'
-import jimp from 'jimp'
-import { cv } from 'opencv-wasm'
-
-import express from 'express'
-import cors from 'cors'
-
-import { ask_openai } from './ask_openai.js'
+import cors from 'cors';
+import express from 'express';
+import fs from 'fs';
+import jimp from 'jimp';
+import multer from 'multer';
+import { cv } from 'opencv-wasm';
+import path from 'path';
+import sharp from 'sharp';
+import { fileURLToPath } from 'url'; // used to get the directory name of the current file
+import { ask_openai } from './ask_openai.js';
 
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
@@ -25,6 +18,11 @@ const __dirname = path.dirname(__filename);
 // if (!fs.existsSync('./cache/')) {
 //   fs.mkdirSync('./cache/', { recursive: true })
 // }
+
+
+// Configure multer storage
+const storage = multer.memoryStorage(); // Store files in memory as Buffer objects
+const multer_upload = multer({ storage: storage });
 
 
 function checkOrigin(origin) {
@@ -52,46 +50,94 @@ function checkOrigin(origin) {
   return isAllowed
 }
 
-async function ocr_result_to_structured_json (ocr_result_text) {
-  console.info('sending to gpt-3')
+async function image_to_structured_json(base64image) {
+  console.info('sending to gpt-4o-mini')
 
   const prompt = `
-${ocr_result_text}
+  You are an OCR reader for invoices. You’ll get one or more images from one single invoice and you return the following information.
 
-Strictly return as JSON:
-- place_name (as one string)
-- place_address (as one string)
-- datetime (yyyy-MM-dd HH:mm:ss Z)
-- cost_sum (as string with currency and 000.00)
-- amount_of_tip (as string with currency and 000.00)
-- way_of_payment (Visa, Cash, or so on) (as one string)
-- as an array: items (name, quantity, price_per_quantity and price_total (as string with currency and 000.00))
+  Precisely list which items were bought, the price of each item, and the bought quantity.
+  **IMPORTANT**: Item names might span multiple lines. If an item name spans multiple lines, **combine all lines** to form the complete item name. **Combine all related lines into one item name**. Do not split an item into separate entries.
+  **Repeat**: Combine multiple lines into one item name if necessary. Each item should be listed only once with its complete name. **Do not list parts of the same item separately**.
+  Be cautious to list the correct items. The items normally have a price directly next to them.
+  
+  Also output the date and time of the transaction as an ISO datetime.
+  And output the precise location of the store.
+  Also output the tax_id, brand of the store, and additional information about the store mentioned in the example JSON.
+  
+  Do not use python.
+  Output as JSON.
+  
+  Example JSON
+  {
+  items: [
+  {
+  name: string (EXACTLY what’s written on the invoice. DO NOT change anything. think precisely about handwritten. Combine multiple lines into one item if necessary. replace line breaks with whitespace)
+  corrected_name: string (the name WITH CORRECTED letter casing, spelling, correct umlaute, without abbreviations and WITHOUT liter (1L / 0.4 / …) or kilo amounts. add missing letters)
+  short_name: string (a really short but presize name for the item. think about the most important part of the item. LEAVE OUT out ANY additional infos or unconventionell naming/prefix-words/suffix-words. multiple items can have the same short_name. NOT ONLY the categorie.
+  price_total: string (only the number) (summed price of this item)
+  price_single: string (only the number) (price of one quantity of this item)
+  currency: string (EUR, USD, …)
+  quantity: number (the amount of items bought)
+  amount: number (specify the liter or kilo amount if known, extracted from the food name if available; otherwise, leave as 0)
+  amount_unit: string (specify the unit for the amount-value such as "kilo", "liter", etc.; leave empty if not known)
+  }
+  ]
+  datetime: string (iso datetime YYYY-MM-DDThh:mm)
+  total_cost: string (total amount paid, only the number)
+  total_cost_currency: string (EUR, USD, …)
+  payment_method: string (unknown, cash, card)
+  card_provider: string (lowercase, empty if not known or not used)
+  store: {
+  name: string
+  tax_id: string
+  phone: string
+  email: string
+  website: string
+  opening_hours: string (use the OSM standard. leave empty if not known. example: "Mo-Fr 08:00-12:00,13:00-17:30; Sa 08:00-12:00")
+  address: {
+  formatted: string (EXACT address AS ON the invoice. nothing more. NO CORRECTIONS. pay attention and look at the image with precision. replace linebreaks with whitespace)
+  city_geo: { (best guess for the cities geo location)
+    lat: number
+    lng: number
+    r_km: integer number (radius in km of the city from city_geo. the whole city should be the circle)
+  }
+  housenumber, postalcode, street, city, country: string (everything you know or can SAFELY assume. you are allowed to assume here. correct spellings, add missing letters, add missing parts, add missing whitespace, CORRECT umlaute)
+  }
+  }
+  }
+  
+  Currency is in euros (€) if not specified otherwise.
+  Do NOT assume any data. Only when mentioned in the JSON example.
+  Do NOT output markdown code boundaries. ONLY OUTPUT VALID JSON.  
 
-Currency is in euros (€) if not specified otherwise.
-Be precise with all the values.
+  **REMEMBER**: Combine multiple lines into one item name if it is one item. Each item should be listed only once with its complete name. Ingredients or extras may be listed in multiple lines. Combine them into one item name. **Combine all lines that describe an item into one entry. Do not split related lines into separate items**.
 `
 
   try {
-    let max_tokens = ocr_result_text.length // TODO: find a better way to set this (but this should be enough for now)
-    if (max_tokens > 2000) {
-      max_tokens = 2000
-    }
-
     const result_json_text = await ask_openai(
       [
-        // {
-        //   role: 'system',
-        //   // content: 'Only answer truthfully. Do not lie. Only cite the text. Strictly return as JSON.',
-        //   content: 'Answer as truthfully as possible.',
-        // },
         {
-          role: 'user',
+          role: 'system',
           content: prompt,
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": base64image,
+                "detail": "high"
+              }
+            }
+          ]
         }
       ],
       {
-        max_tokens,
-        temperature: 0.5,
+        max_tokens: 4096,
+        temperature: 0.8,
+        response_format: { type: 'json_object' },
       }
     )
 
@@ -100,6 +146,8 @@ Be precise with all the values.
     }
 
     const result_structured = JSON.parse(result_json_text)
+
+    console.log('result_structured', result_structured)
     return result_structured
   } catch (error) {
     console.error('error', error)
@@ -108,90 +156,25 @@ Be precise with all the values.
   return null
 }
 
-/*
-async function image_to_foreground(sharp_image) {
-  try {
-  const photoBuffer = await jimp.read(await sharp_image.toBuffer())
-  const src = cv.matFromImageData(photoBuffer.bitmap)
-
-  // const jimpBuffer = await jimp.read(image_buffer)
-  // const src = cv.matFromImageData(jimpBuffer.bitmap)
-    console.log('src', src)
-  cv.cvtColor(src, src, cv.COLOR_RGBA2RGB, 0);
-  let mask = new cv.Mat();
-  let bgdModel = new cv.Mat();
-  let fgdModel = new cv.Mat();
-  let rect = new cv.Rect(50, 50, 260, 280);
-    console.log('rect', rect)
-  cv.grabCut(src, mask, rect, bgdModel, fgdModel, 1, cv.GC_INIT_WITH_RECT);
-  console.log('after grab cut')
-  // draw foreground
-  for (let i = 0; i < src.rows; i++) {
-    console.log('i', i)
-    for (let j = 0; j < src.cols; j++) {
-      if (mask.ucharPtr(i, j)[0] === 0 || mask.ucharPtr(i, j)[0] === 2) {
-        src.ucharPtr(i, j)[0] = 0;
-        src.ucharPtr(i, j)[1] = 0;
-        src.ucharPtr(i, j)[2] = 0;
-      }
-    }
-  }
-  // draw grab rect
-  let color = new cv.Scalar(0, 0, 255);
-  let point1 = new cv.Point(rect.x, rect.y);
-  let point2 = new cv.Point(rect.x + rect.width, rect.y + rect.height);
-    console.log('point2', point2)
-  cv.rectangle(src, point1, point2, color);
-  // cv.imshow('canvasOutput', src);
-  console.log('src', src)
-    const foreground_buffer = Buffer.from(src) // convert to buffer
-    console.log('foreground_buffer', foreground_buffer)
-
-  // clean up
-  src.delete();
-  mask.delete();
-  bgdModel.delete();
-  fgdModel.delete();
-
-    return foreground_buffer
-
-} catch (error) {
-  console.error('f-error', error)
-}
-
-return null
-}
-*/
-
-async function save_debug_image(sharp_image, filename) {
-  // save image to disk for debugging
-  // checkif ./images/ exists
-  // use_cache()
-  if (!fs.existsSync('./cache/images/')) {
-    fs.mkdirSync('./cache/images/', { recursive: true })
-  }
-  await sharp_image.toFile(`./cache/images/debug_${filename}.png`)
-  console.log('saved debug image')
-}
-
 async function loadImage(buffer) {
   // I use the idea from the following answer to remove the shadows: https://stackoverflow.com/questions/44047819/increase-image-brightness-without-overflow/44054699#44054699
 
   const image_bw = await sharp(buffer)
-    .flatten({ background: '#FFF' }) // replace alpha channel with white background
     .rotate() // auto rotate based on EXIF data
+    .flatten({ background: '#FFF' }) // replace alpha channel with white background
     .recomb([ // grayscale
       [0.333, 0.333, 0.333],
       [0.333, 0.333, 0.333],
       [0.333, 0.333, 0.333],
     ])
     .normalise() // full range 0 to 255
-  console.log('checked rotation of image + converted to grayscale')
+  // console.log('checked rotation of image + converted to grayscale + resized')
+
+  await image_bw.toFile(`./cache/images/image_bw.png`)
 
 
-
-  let { width, height, orientation } = await image_bw.metadata()
-  console.info('width, height, orientation', width, height, orientation)
+  let { width, height, orientation, size } = await image_bw.metadata()
+  // console.info('width, height, orientation', width, height, orientation, size)
 
   if (orientation === 6 || orientation === 8) {
     // swap width and height if orientation is 6 or 8
@@ -200,20 +183,6 @@ async function loadImage(buffer) {
     width = height
     height = tmp
   }
-
-
-
-
-  // const foreground_buffer = await image_to_foreground(image_bw)
-  // console.log('foreground_buffer', foreground_buffer)
-  // const foreground_buffer_image = await sharp(foreground_buffer, {
-  //   raw: {
-  //     width,
-  //     height,
-  //     channels: 4,
-  //   }
-  // })
-  // console.log('got foreground sharp image')
 
 
   // throw new Error('stop here')
@@ -226,8 +195,29 @@ async function loadImage(buffer) {
   let anchor = new cv.Point(-1, -1)
   cv.dilate(src, dst, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue())
   const image_dilated = Buffer.from(dst.data)
-  console.log('image dilated')
+  // console.log('image dilated')
   // END dialate
+
+
+  const image_dilated_tmp = await sharp(image_dilated, {
+    raw: {
+      width,
+      height,
+      channels: 4,
+    }
+  })
+  await image_dilated_tmp.toFile(`./cache/images/image_dilated_tmp.png`)
+
+
+  const image_median_tmp = await sharp(image_dilated, {
+    raw: {
+      width,
+      height,
+      channels: 4,
+    }
+  })
+    .median(21)
+  await image_median_tmp.toFile(`./cache/images/image_median_tmp.png`)
 
   const image_blurred = await sharp(image_dilated, {
     raw: {
@@ -238,7 +228,9 @@ async function loadImage(buffer) {
   }) // await sharp(await image_bw.clone().toBuffer())
     .median(21) // median-blur // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines BUT the stackoverflow-article suggests 21px as a good value. i guess this is 3x the kernel size of the dialation
     .normalise()
-  console.log('image blurred')
+  // console.log('image blurred')
+
+  await image_blurred.toFile(`./cache/images/image_blurred.png`)
 
   const bw_buffer = await image_bw.extractChannel('red').raw().toBuffer()
 
@@ -258,8 +250,10 @@ async function loadImage(buffer) {
       }
       return rgb
     })
-  console.log('removed shadows from image')
+  // console.log('removed shadows from image')
 
+
+  // const image_bw_buffer = await new_grayscale.extractChannel('red').raw().toBuffer()
   const image_better = await sharp(Buffer.from(new_grayscale), {
     raw: {
       width,
@@ -270,11 +264,7 @@ async function loadImage(buffer) {
     .normalise()
     // .threshold(180) // 220 // only full white or full black
     .ensureAlpha() // add alpha channel if not already present
-
-
-
-
-
+    .resize({ width: 2000, height: 2000, fit: 'inside' }) // resize to max 1400px on the largest side
 
 
   // save image to disk for debugging
@@ -286,52 +276,12 @@ async function loadImage(buffer) {
   await image_better.toFile(`./cache/images/debug.png`)
   console.log('saved debug image')
 
+
   return {
-    data: await image_better.raw().toBuffer(),
+    data: await image_better.jpeg().toBuffer(),
     width,
     height,
   }
-}
-
-async function loadModel(options) {
-  let {
-    lang = 'eng',
-    type = 'fast',
-  } = options || {}
-
-  if (type !== 'fast' && type !== 'best') {
-    type = 'fast'
-  }
-
-  let modelPath = null
-  switch (lang) {
-    case 'deu':
-      modelPath = 'deu.traineddata'
-      break
-    default: // case 'eng':
-      modelPath = 'eng.traineddata'
-  }
-
-  const save_folder = `${__dirname}/tesseract-data/`
-  const save_path = `${save_folder}${type}-${modelPath}`
-
-  if (!fs.existsSync(save_folder)) {
-    fs.mkdirSync(save_folder, { recursive: true })
-  }
-
-  if (!existsSync(save_path)) {
-    console.info('Downloading text recognition model...')
-    const modelURL = `https://github.com/tesseract-ocr/tessdata_${type}/raw/main/${modelPath}`
-    const response = await fetch(modelURL)
-    if (!response.ok) {
-      process.stderr.write(`Failed to download model from ${modelURL}`)
-      process.exit(1)
-    }
-    const data = await response.arrayBuffer()
-    await writeFile(save_path, new Uint8Array(data))
-  }
-
-  return readFile(save_path)
 }
 
 async function readRequestBody(request) {
@@ -347,7 +297,7 @@ console.info('Initializing server...')
 const app = express()
 app.use(cors())
 app.use(function (req, res, next) {
-  console.log('app.use - request url:', req.url)
+  // console.log('app.use - request url:', req.url)
 
   // const origin = req.get('origin')
   const origin = req.header('Origin')
@@ -371,67 +321,45 @@ app.get('/api', (req, res) => {
   res.end('The api is under /api/ocr')
 })
 
-
-
-const ocr_client_cache = {}
-async function get_ocr_client(options) {
-
-  let {
-    lang = 'eng',
-    type = 'fast',
-  } = options || {}
-
-  if (type !== 'fast' && type !== 'best') {
-    type = 'fast'
-  }
-
-  const key = `${type}-${lang}`
-
-  if (!ocr_client_cache[key]) {
-
-    // Start a new OCR worker. In this simple demo app we do this for every
-    // request. In a real application you may want to create a pool of clients
-    // which can be re-used across requests, to save needing to re-initialize
-    // the worker for each request.
-    const client = createOCRClient()
-
-    // Load model concurrently with reading image.
-    const model = await loadModel(options)
-    await client.loadModel(model)
-    ocr_client_cache[key] = client
-  }
-
-  return ocr_client_cache[key]
-}
-
-app.post('/api/ocr', async (req, res) => {
-  console.log('/api/ocr')
-
-
-  const client = await get_ocr_client({
-    lang: 'deu',
-    type: 'fast',
-  })
-  console.info('initialized ocr client')
+app.post('/api/ocr', multer_upload.any(), async (req, res) => {
+  // console.log('/api/ocr')
 
   try {
 
-    const imageData = await readRequestBody(req)
-    console.info(imageData.length, 'bytes of image data received')
-    const image = await loadImage(imageData)
-    console.info('loaded image')
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send('No file was uploaded.');
+    }
 
-    await client.loadImage(image)
-    console.info('loaded image into ocr client')
+    const file = req.files[0]
+    const parsedImage = await loadImage(file.buffer)
+    const base64String = parsedImage.data.toString('base64');
+    const dataUrl = `data:image/jpeg;base64,${base64String}`;
+    // const dataUrl = `data:${file.mimetype};base64,${base64String}`;
+    console.info(file.size, 'bytes of image data received')
 
-    const text = await client.getText()
-    console.info('got text from ocr client')
 
 
 
-    const invoice_result = await ocr_result_to_structured_json(text)
+    // // Read the file buffer
+    // const fileBuffer = file.buffer;
+
+    // // Convert buffer to Base64
+    // const base64String = fileBuffer.toString('base64');
+
+    // // Optionally, create a complete data URL
+    // const mimeType = file.mimetype; // This is provided by Multer
+    // const dataUrl = `data:${mimeType};base64,${base64String}`;
+
+
+
+
+
+    // write base64 to a file
+    fs.writeFileSync('./base64.txt', dataUrl)
+
+    const invoice_result = await image_to_structured_json(dataUrl)
     // const invoice_result = null
-    console.log('got json structure from text with gpt-3')
+    console.log('got json structure from text')
 
     // // write hocr to disk for debugging
     // const hocr = (await client.getHOCR())
@@ -442,7 +370,7 @@ app.post('/api/ocr', async (req, res) => {
     res.writeHead(200)
 
     const body = {
-      text,
+      // text,
       invoice_result,
     }
     res.end(JSON.stringify(body, null, 2))

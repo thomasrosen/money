@@ -1,31 +1,31 @@
-import { Configuration, OpenAIApi } from 'openai'
-const configuration = new Configuration({
+import OpenAI from "openai";
+
+const openAIclient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-})
-const openai = new OpenAIApi(configuration)
+});
 
 export async function ask_openai(messages, options = {}) {
-  const {
-    max_tokens = 500,
-    temperature = 0.7,
-  } = options
+  try {
+    const chatCompletion = await openAIclient.chat.completions.create({
+      model: 'gpt-4o',
+      messages,
+      max_tokens: 4096,
+      temperature: 1,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+      response_format: { type: 'json_object' },
+      ...options,
+    });
 
-  const completion = await openai.createChatCompletion({
-    model: 'gpt-3.5-turbo',
-    n: 1,
-    temperature, // Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-    max_tokens,
-    stream: false,
-    messages: messages,
-    ...options,
-  }, { responseType: null })
+    console.log('chatCompletion', JSON.stringify(chatCompletion, null, 2))
 
-  return new Promise(resolve => {
-    try {
-      resolve(completion.data?.choices[0]?.message?.content)
-    } catch (error) {
-      console.error('ERROR', error)
-      resolve(null)
+    const result = chatCompletion?.choices[0]?.message?.content
+    if (typeof result === 'string') {
+      return result
     }
-  })
+  } catch (error) {
+    console.error('ERROR', error)
+  }
+  return null
 }
