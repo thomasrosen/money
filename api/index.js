@@ -74,7 +74,7 @@ async function image_to_structured_json(base64image) {
   {
   name: string (EXACTLY what’s written on the invoice. DO NOT change anything. think precisely about handwritten. Combine multiple lines into one item if necessary. replace line breaks with whitespace)
   corrected_name: string (the name WITH CORRECTED letter casing, spelling, correct umlaute, without abbreviations and WITHOUT liter (1L / 0.4 / …) or kilo amounts. add missing letters)
-  short_name: string (a really short but presize name for the item. think about the most important part of the item. LEAVE OUT out ANY additional infos or unconventionell naming/prefix-words/suffix-words. multiple items can have the same short_name. NOT ONLY the categorie.
+  short_name: string (a really short but presize name for the item. think about the most important part of the item. LEAVE OUT out ANY additional infos or unconventionell naming/prefix-words/suffix-words. multiple items can have the same short_name. NOT ONLY the categorie.)
   price_total: string (only the number) (summed price of this item)
   price_single: string (only the number) (price of one quantity of this item)
   currency: string (EUR, USD, …)
@@ -102,7 +102,7 @@ async function image_to_structured_json(base64image) {
     lng: number
     r_km: integer number (radius in km of the city from city_geo. the whole city should be the circle)
   }
-  housenumber, postalcode, street, city, country: string (everything you know or can SAFELY assume. you are allowed to assume here. correct spellings, add missing letters, add missing parts, add missing whitespace, CORRECT umlaute)
+  housenumber, postalcode, street, city, country: string (everything you know or can SAFELY assume. you are allowed to assume here. correct spellings, add missing letters BER -> Berlin, add missing parts FamMain -> Frankfurt am Main, add missing whitespace, CORRECT umlaute, normal casing BERLIN -> Berlin, …)
   }
   }
   }
