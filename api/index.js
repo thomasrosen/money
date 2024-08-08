@@ -170,7 +170,7 @@ async function loadImage(buffer) {
     .normalise() // full range 0 to 255
   // console.log('checked rotation of image + converted to grayscale + resized')
 
-  await image_bw.toFile(`./cache/images/image_bw.png`)
+  // await image_bw.toFile(`./cache/images/image_bw.png`)
 
 
   let { width, height, orientation, size } = await image_bw.metadata()
@@ -185,8 +185,6 @@ async function loadImage(buffer) {
   }
 
 
-  // throw new Error('stop here')
-
   // START dialate
   const photoBuffer = await jimp.read(await image_bw.toBuffer())
   const src = cv.matFromImageData(photoBuffer.bitmap)
@@ -195,29 +193,29 @@ async function loadImage(buffer) {
   let anchor = new cv.Point(-1, -1)
   cv.dilate(src, dst, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue())
   const image_dilated = Buffer.from(dst.data)
-  // console.log('image dilated')
+  console.log('image dilated')
   // END dialate
 
 
-  const image_dilated_tmp = await sharp(image_dilated, {
-    raw: {
-      width,
-      height,
-      channels: 4,
-    }
-  })
-  await image_dilated_tmp.toFile(`./cache/images/image_dilated_tmp.png`)
+  // const image_dilated_tmp = await sharp(image_dilated, {
+  //   raw: {
+  //     width,
+  //     height,
+  //     channels: 4,
+  //   }
+  // })
+  // await image_dilated_tmp.toFile(`./cache/images/image_dilated_tmp.png`)
 
 
-  const image_median_tmp = await sharp(image_dilated, {
-    raw: {
-      width,
-      height,
-      channels: 4,
-    }
-  })
-    .median(21)
-  await image_median_tmp.toFile(`./cache/images/image_median_tmp.png`)
+  // const image_median_tmp = await sharp(image_dilated, {
+  //   raw: {
+  //     width,
+  //     height,
+  //     channels: 4,
+  //   }
+  // })
+  //   .median(21)
+  // await image_median_tmp.toFile(`./cache/images/image_median_tmp.png`)
 
   const image_blurred = await sharp(image_dilated, {
     raw: {
@@ -228,9 +226,9 @@ async function loadImage(buffer) {
   }) // await sharp(await image_bw.clone().toBuffer())
     .median(21) // median-blur // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines BUT the stackoverflow-article suggests 21px as a good value. i guess this is 3x the kernel size of the dialation
     .normalise()
-  // console.log('image blurred')
+  console.log('image blurred')
 
-  await image_blurred.toFile(`./cache/images/image_blurred.png`)
+  // await image_blurred.toFile(`./cache/images/image_blurred.png`)
 
   const bw_buffer = await image_bw.extractChannel('red').raw().toBuffer()
 
@@ -239,6 +237,7 @@ async function loadImage(buffer) {
       const rgb = []
       for (let i = 0; i < blurred_buffer.length; i += 1) {
         const new_value = 255 - (blurred_buffer[i] - bw_buffer[i])
+        // const inverted_value = 255 - new_value
         // apply a threshold
         if (new_value < 20) {
           rgb.push(0)
@@ -250,7 +249,7 @@ async function loadImage(buffer) {
       }
       return rgb
     })
-  // console.log('removed shadows from image')
+  console.log('removed shadows from image')
 
 
   // const image_bw_buffer = await new_grayscale.extractChannel('red').raw().toBuffer()
@@ -263,8 +262,21 @@ async function loadImage(buffer) {
   })
     .normalise()
     // .threshold(180) // 220 // only full white or full black
-    .ensureAlpha() // add alpha channel if not already present
-    .resize({ width: 2000, height: 2000, fit: 'inside' }) // resize to max 1400px on the largest side
+    // .ensureAlpha() // add alpha channel if not already present
+    .trim({
+      background: '#fff',
+      threshold: 127,
+      // lineArt: true
+    })
+    // .negate()
+    // .linear(1.5, 0) // Increase contrast and slightly darken
+    // .linear(1.5, -10) // Increase contrast and slightly darken
+    // .gamma(1.8) // Adjust gamma to further enhance contrast
+    .resize({ width: 600, fit: 'inside' }) // resize to max 1400px on the largest side
+    .jpeg({
+      quality: 60,
+      // chromaSubsampling: '4:4:4',
+    })
 
 
   // save image to disk for debugging
@@ -273,23 +285,15 @@ async function loadImage(buffer) {
   if (!fs.existsSync('./cache/images/')) {
     fs.mkdirSync('./cache/images/', { recursive: true })
   }
-  await image_better.toFile(`./cache/images/debug.png`)
+  await image_better.toFile(`./cache/images/debug.jpg`)
   console.log('saved debug image')
 
 
   return {
-    data: await image_better.jpeg().toBuffer(),
+    data: await image_better.toBuffer(),
     width,
     height,
   }
-}
-
-async function readRequestBody(request) {
-  const chunks = []
-  for await (let chunk of request) {
-    chunks.push(chunk)
-  }
-  return Buffer.concat(chunks)
 }
 
 console.info('Initializing server...')
