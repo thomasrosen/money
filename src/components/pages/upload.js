@@ -94,13 +94,8 @@ export default function Upload() {
     })
     const json = await response.json()
     console.log('send_files-json', json)
-    setLoading(false)
     setResult(json)
-
-
-    // setResult({
-    //   hello: 'world'
-    // })
+    setLoading(false)
 
   }, [files])
 
@@ -138,7 +133,7 @@ export default function Upload() {
           : null
       }
       {
-        result !== null
+        result
           ? <>
             <br />
             <br />

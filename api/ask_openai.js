@@ -18,8 +18,6 @@ export async function ask_openai(messages, options = {}) {
       ...options,
     });
 
-    console.log('chatCompletion', JSON.stringify(chatCompletion, null, 2))
-
     const result = chatCompletion?.choices[0]?.message?.content
     if (typeof result === 'string') {
       return result

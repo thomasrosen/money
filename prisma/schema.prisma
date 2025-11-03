@@ -1,0 +1,22 @@
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Invoice {
+  invoice_index  Int      @id @default(autoincrement())
+  invoice_id     String   @unique @default(cuid())
+  data           Json
+  create_created DateTime @default(now())
+}
+
+model Photo {
+  image_index Int     @id @default(autoincrement())
+  image_id    String  @unique @default(cuid())
+  data String
+}

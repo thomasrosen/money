@@ -1,6 +1,5 @@
 import cors from 'cors';
 import express from 'express';
-import fs from 'fs';
 import jimp from 'jimp';
 import multer from 'multer';
 import { cv } from 'opencv-wasm';
@@ -8,6 +7,9 @@ import path from 'path';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url'; // used to get the directory name of the current file
 import { ask_openai } from './ask_openai.js';
+import { genID } from './genID.js';
+import { getSha512Hash } from './getSha512Hash.js';
+import { checkFileExistsByPath, createOrUpdateFileContents, initOctokit, text2base64 } from './git.js';
 
 // const isDevEnvironment = process.env.environment === 'dev' || false
 
@@ -53,28 +55,31 @@ function checkOrigin(origin) {
 async function image_to_structured_json(base64image) {
   console.info('sending to gpt-4o-mini')
 
-  const prompt = `
-  You are an OCR reader for invoices. You’ll get one or more images from one single invoice and you return the following information.
+  const possible_categories = 'other beverages coffee tea juice soda beer wine bakery_items loaf_of_bread pastries doughnuts cakes muffins croissants small_bread dairy_products milk cheese yogurt butter cream fruits_and_vegetables apples bananas carrots lettuce tomatoes potatoes meat_and_seafood chicken beef pork fish shrimp snacks chips chocolate nuts candy popcorn prepared_foods pizza sandwiches salads sushi burgers pantry_items rice pasta canned_beans flour sugar household_items paper_towels dish_soap laundry_detergent trash_bags cleaning_supplies personal_care shampoo soap toothpaste deodorant lotion frozen_foods ice_cream frozen_pizza frozen_vegetables frozen_meals pet_supplies dog_food cat_food pet_treats pet_toys transportation bus_fare train_ticket taxi_ride fuel tickets concert_ticket movie_ticket flight_ticket event_ticket entertainment books movies music_games sports_gear toys health_and_wellness medicine vitamins fitness_equipment medical_supplies technology_and_electronics gadgets computers mobile_phones accessories chargers headphones clothing_and_accessories mens_clothing womens_clothing neutral_clothing shoes bags jewelry home_and_garden furniture kitchenware garden_tools home_decor office_supplies stationery printer_ink office_furniture notebooks automotive car_maintenance car_parts tires car_cleaning_supplies services repairs cleaning_services professional_services legal consulting subscriptions magazines online_services education books tuition_fees online_courses school_supplies travel accommodation travel_insurance tour_packages car_rental miscellaneous gifts donations miscellaneous_fees bank_fees late_fees craft_supplies home_improvement tools paint electrical_supplies plumbing_supplies outdoor_gear camping_gear fishing_equipment cycling_gear photography cameras lenses photography_accessories baby_supplies diapers baby_food baby_clothes childcare_services party_supplies decorations party_favors balloons office_equipment desks chairs computers printers seasonal_items christmas_decorations halloween_costumes summer_gear winter_clothing gardening_plants seeds soil fertilizers beauty_and_cosmetics makeup skincare products haircare products nail_care spa_services groceries fresh_produce meats seafood dairy bakery_items pantry_staples cleaning_services home_cleaning laundry_services dry_cleaning child_care babysitting daycare tutoring tutoring_services test_preparation language_classes pet_services grooming veterinary_services pet_sitting'.split(' ')
 
-  Precisely list which items were bought, the price of each item, and the bought quantity.
-  **IMPORTANT**: Item names might span multiple lines. If an item name spans multiple lines, **combine all lines** to form the complete item name. **Combine all related lines into one item name**. Do not split an item into separate entries.
-  **Repeat**: Combine multiple lines into one item name if necessary. Each item should be listed only once with its complete name. **Do not list parts of the same item separately**.
-  Be cautious to list the correct items. The items normally have a price directly next to them.
-  
-  Also output the date and time of the transaction as an ISO datetime.
-  And output the precise location of the store.
-  Also output the tax_id, brand of the store, and additional information about the store mentioned in the example JSON.
-  
-  Do not use python.
-  Output as JSON.
-  
-  Example JSON
+  const prompt = `
+You are an OCR reader for invoices. You’ll get one or more images from one single invoice and you return the following information.
+
+Precisely list which items were bought, the price of each item, and the bought quantity.
+**IMPORTANT**: Item names might span multiple lines. If an item name spans multiple lines, **combine all lines** to form the complete item name. **Combine all related lines into one item name**. Do not split an item into separate entries.
+**Repeat**: Combine multiple lines into one item name if necessary. Each item should be listed only once with its complete name. **Do not list parts of the same item separately**.
+Be cautious to list the correct items. The items normally have a price directly next to them.
+
+Also output the date and time of the transaction as an ISO datetime.
+And output the precise location of the store.
+Also output the tax_id, brand of the store, and additional information about the store mentioned in the example JSON.
+
+Do not use python.
+Output as JSON.
+
+Example JSON
   {
   items: [
   {
   name: string (EXACTLY what’s written on the invoice. DO NOT change anything. think precisely about handwritten. Combine multiple lines into one item if necessary. replace line breaks with whitespace)
   corrected_name: string (the name WITH CORRECTED letter casing, spelling, correct umlaute, without abbreviations and WITHOUT liter (1L / 0.4 / …) or kilo amounts. add missing letters)
   short_name: string (a really short but presize name for the item. think about the most important part of the item. LEAVE OUT out ANY additional infos or unconventionell naming/prefix-words/suffix-words. multiple items can have the same short_name. NOT ONLY the categorie.)
+  categories: [string] (list of categories the item belongs to. apply all the fit. use only the following categories: [${possible_categories.join(', ')}]. include categories from the list that are transaltions, synonyms, or related to the item.)
   price_total: string (only the number) (summed price of this item)
   price_single: string (only the number) (price of one quantity of this item)
   currency: string (EUR, USD, …)
@@ -106,12 +111,12 @@ async function image_to_structured_json(base64image) {
   }
   }
   }
-  
-  Currency is in euros (€) if not specified otherwise.
-  Do NOT assume any data. Only when mentioned in the JSON example.
-  Do NOT output markdown code boundaries. ONLY OUTPUT VALID JSON.  
 
-  **REMEMBER**: Combine multiple lines into one item name if it is one item. Each item should be listed only once with its complete name. Ingredients or extras may be listed in multiple lines. Combine them into one item name. **Combine all lines that describe an item into one entry. Do not split related lines into separate items**.
+Currency is in euros (€) if not specified otherwise.
+Do NOT assume any data. Only when mentioned in the JSON example.
+Do NOT output markdown code boundaries. ONLY OUTPUT VALID JSON.  
+
+**REMEMBER**: Combine multiple lines into one item name if it is one item. Each item should be listed only once with its complete name. Ingredients or extras may be listed in multiple lines. Combine them into one item name. **Combine all lines that describe an item into one entry. Do not split related lines into separate items**.
 `
 
   try {
@@ -147,7 +152,6 @@ async function image_to_structured_json(base64image) {
 
     const result_structured = JSON.parse(result_json_text)
 
-    console.log('result_structured', result_structured)
     return result_structured
   } catch (error) {
     console.error('error', error)
@@ -168,7 +172,7 @@ async function loadImage(buffer) {
       [0.333, 0.333, 0.333],
     ])
     .normalise() // full range 0 to 255
-  // console.log('checked rotation of image + converted to grayscale + resized')
+  // console.info('checked rotation of image + converted to grayscale + resized')
 
   // await image_bw.toFile(`./cache/images/image_bw.png`)
 
@@ -193,7 +197,7 @@ async function loadImage(buffer) {
   let anchor = new cv.Point(-1, -1)
   cv.dilate(src, dst, M, anchor, 1, cv.BORDER_CONSTANT, cv.morphologyDefaultBorderValue())
   const image_dilated = Buffer.from(dst.data)
-  console.log('image dilated')
+  console.info('image dilated')
   // END dialate
 
 
@@ -226,7 +230,7 @@ async function loadImage(buffer) {
   }) // await sharp(await image_bw.clone().toBuffer())
     .median(21) // median-blur // 30px is the line-height sweet-spot for tesseract. so 61px as a median blur should remove most of the lines BUT the stackoverflow-article suggests 21px as a good value. i guess this is 3x the kernel size of the dialation
     .normalise()
-  console.log('image blurred')
+  console.info('image blurred')
 
   // await image_blurred.toFile(`./cache/images/image_blurred.png`)
 
@@ -249,7 +253,7 @@ async function loadImage(buffer) {
       }
       return rgb
     })
-  console.log('removed shadows from image')
+  console.info('removed shadows from image')
 
 
   // const image_bw_buffer = await new_grayscale.extractChannel('red').raw().toBuffer()
@@ -282,14 +286,15 @@ async function loadImage(buffer) {
   // save image to disk for debugging
   // checkif ./images/ exists
   // use_cache()
-  if (!fs.existsSync('./cache/images/')) {
-    fs.mkdirSync('./cache/images/', { recursive: true })
-  }
-  await image_better.toFile(`./cache/images/debug.jpg`)
-  console.log('saved debug image')
+  // if (!fs.existsSync('./cache/images/')) {
+  //   fs.mkdirSync('./cache/images/', { recursive: true })
+  // }
+  // await image_better.toFile(`./cache/images/debug.jpg`)
+  // console.info('saved debug image')
 
 
   return {
+    mimetype: 'image/jpeg',
     data: await image_better.toBuffer(),
     width,
     height,
@@ -301,7 +306,7 @@ console.info('Initializing server...')
 const app = express()
 app.use(cors())
 app.use(function (req, res, next) {
-  // console.log('app.use - request url:', req.url)
+  // console.info('app.use - request url:', req.url)
 
   // const origin = req.get('origin')
   const origin = req.header('Origin')
@@ -325,68 +330,95 @@ app.get('/api', (req, res) => {
   res.end('The api is under /api/ocr')
 })
 
+function sortObjectKeysRecursively(obj) {
+  if (Array.isArray(obj)) {
+    // If the object is an array, map over its elements and sort any objects within it
+    return obj.map(item => sortObjectKeysRecursively(item));
+  } else if (obj !== null && typeof obj === 'object') {
+    // If the object is not an array and is an object, sort its keys
+    const sortedKeys = Object.keys(obj).sort();
+    const sortedObj = {};
+    sortedKeys.forEach((key) => {
+      sortedObj[key] = sortObjectKeysRecursively(obj[key]);
+    });
+    return sortedObj;
+  }
+  // Return the value if it's neither an object nor an array
+  return obj;
+}
+
 app.post('/api/ocr', multer_upload.any(), async (req, res) => {
-  // console.log('/api/ocr')
+  // console.info('/api/ocr')
 
   try {
-
+    // check if we even got files
     if (!req.files || req.files.length === 0) {
       return res.status(400).send('No file was uploaded.');
     }
 
+    // start connection to github
+    const octokit = initOctokit()
+    const defaultProps = {
+      octokit,
+      owner: 'thomasrosen',
+      repo: 'money-data',
+    }
+
+    // convert image to bw + remove shadows + crop
     const file = req.files[0]
     const parsedImage = await loadImage(file.buffer)
     const base64String = parsedImage.data.toString('base64');
-    const dataUrl = `data:image/jpeg;base64,${base64String}`;
-    // const dataUrl = `data:${file.mimetype};base64,${base64String}`;
+    const dataUrl = `data:${parsedImage.mimetype};base64,${base64String}`;
     console.info(file.size, 'bytes of image data received')
 
+    // get the hash of the image to only save and parse once
+    const imageHash = getSha512Hash(base64String) // sha512 so there are really few collisions
 
+    // check if image already exists. if yes: stop
+    const fileDoesExists = await checkFileExistsByPath({
+      ...defaultProps,
+      path: `images/${imageHash}.jpg`,
+    })
+    if (fileDoesExists) {
+      throw new Error('image was already uploaded')
+    }
 
+    // upload the image
+    await createOrUpdateFileContents({
+      ...defaultProps,
+      path: `images/${imageHash}.jpg`,
+      base64content: base64String,
+    })
 
-    // // Read the file buffer
-    // const fileBuffer = file.buffer;
+    // parse the image with an LLM and get the content as json
+    let invoice_result = await image_to_structured_json(dataUrl)
+    const invoice_id = genID()
+    invoice_result.id = invoice_id // save the id in the file (and later use it as the filename)
+    invoice_result.images = [imageHash] // add reference to the image
+    // console.info('got json structure from text')
 
-    // // Convert buffer to Base64
-    // const base64String = fileBuffer.toString('base64');
+    // sort the json object
+    invoice_result = sortObjectKeysRecursively(invoice_result)
 
-    // // Optionally, create a complete data URL
-    // const mimeType = file.mimetype; // This is provided by Multer
-    // const dataUrl = `data:${mimeType};base64,${base64String}`;
+    // save the json to github
+    await createOrUpdateFileContents({
+      ...defaultProps,
+      path: `data/${invoice_id}.json`,
+      base64content: text2base64(JSON.stringify(invoice_result, null, 2)),
+    })
 
-
-
-
-
-    // write base64 to a file
-    fs.writeFileSync('./base64.txt', dataUrl)
-
-    const invoice_result = await image_to_structured_json(dataUrl)
-    // const invoice_result = null
-    console.log('got json structure from text')
-
-    // // write hocr to disk for debugging
-    // const hocr = (await client.getHOCR())
-    //   .replace('</body>', '<script src="https://unpkg.com/hocrjs"></script></body>')
-    // await writeFile('./hocr.html', hocr)
-
+    // return the json to the user
     res.setHeader('Content-Type', 'application/json')
     res.writeHead(200)
-
-    const body = {
-      // text,
-      invoice_result,
-    }
-    res.end(JSON.stringify(body, null, 2))
+    res.end(JSON.stringify({
+      result: invoice_result,
+    }, null, 2))
   } catch (err) {
     console.error('error in /api/ocr', err)
+    res.setHeader('Content-Type', 'application/json')
     res.writeHead(500)
     res.end(JSON.stringify({ error: err.message }))
   }
-  // finally {
-  //   // Shut down the OCR worker thread.
-  //   client.destroy()
-  // }
 })
 
 
@@ -396,7 +428,6 @@ const static_files_path = path.join(__dirname, '../build/')
 app.use(express.static(static_files_path))
 
 app.get('*', (req, res) => {
-  // console.log('index.html fallcack - request url:', req.url)
   res.sendFile('index.html', { root: '../build/' })
 })
 
